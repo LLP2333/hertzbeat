@@ -20,14 +20,20 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
+            "preserveSymlinks": true,
             "outputPath": "dist",
             "index": "src/index.html",
             "main": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
             "polyfills": "src/polyfills.ts",
             "assets": [
-              "src/assets",
               "src/favicon.ico",
+              "src/assets",
+              {
+                "glob": "**/*",
+                "input": "src/assets/audio",
+                "output": "/assets/audio"
+              },
               {
                 "glob": "**/*",
                 "input": "./node_modules/@ant-design/icons-angular/src/inline-svg/",
@@ -64,6 +70,7 @@
           },
           "configurations": {
             "production": {
+              "extractLicenses": false,
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",
@@ -79,8 +86,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "6kb",
-                  "maximumError": "10kb"
+                  "maximumWarning": "50kb",
+                  "maximumError": "100kb"
                 }
               ]
             },
@@ -98,15 +105,15 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "browserTarget": "hertzbeat-web-app:build",
-            "proxyConfig": "proxy.conf.js"
+            "proxyConfig": "proxy.conf.json",
+            "buildTarget": "hertzbeat-web-app:build"
           },
           "configurations": {
             "production": {
-              "browserTarget": "hertzbeat-web-app:build:production"
+              "buildTarget": "hertzbeat-web-app:build:production"
             },
             "development": {
-              "browserTarget": "hertzbeat-web-app:build:development"
+              "buildTarget": "hertzbeat-web-app:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -114,7 +121,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "hertzbeat-web-app:build"
+            "buildTarget": "hertzbeat-web-app:build"
           }
         },
         "test": {

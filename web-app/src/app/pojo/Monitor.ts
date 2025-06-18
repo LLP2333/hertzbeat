@@ -17,20 +17,22 @@
  * under the License.
  */
 
-import { Tag } from './Tag';
-
 export class Monitor {
   id!: number;
   name!: string;
   app!: string;
+  scrape!: string;
   host!: string;
   intervals: number = 60;
-  // 任务状态 0:未监控,1:可用,2:不可用
+  // Monitoring status 0: Paused, 1: Up, 2: Down
   status!: number;
+  // Task type 0: Normal, 1: push auto create, 2: discovery auto create
+  type!: number;
   description!: string;
+  labels!: Record<string, string>;
+  annotations!: Record<string, string>;
   creator!: string;
   modifier!: string;
   gmtCreate!: number;
   gmtUpdate!: number;
-  tags!: Tag[];
 }

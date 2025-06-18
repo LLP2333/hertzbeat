@@ -26,6 +26,7 @@ import { finalize } from 'rxjs/operators';
 
 import { SystemConfig } from '../../../../pojo/SystemConfig';
 import { GeneralConfigService } from '../../../../service/general-config.service';
+import { ThemeService } from '../../../../service/theme.service';
 
 @Component({
   selector: 'app-system-config',
@@ -38,6 +39,7 @@ export class SystemConfigComponent implements OnInit {
     private notifySvc: NzNotificationService,
     private configService: GeneralConfigService,
     private settings: SettingsService,
+    private themeService: ThemeService,
     @Inject(DOCUMENT) private doc: any,
     @Inject(ALAIN_I18N_TOKEN) private i18nSvc: I18NService
   ) {}
@@ -56,7 +58,7 @@ export class SystemConfigComponent implements OnInit {
         if (message.code === 0) {
           if (message.data) {
             this.config = message.data;
-            this.changeTheme(this.config.theme); // 刷新后更新主题
+            this.config.theme = this.themeService.getTheme() || 'default';
           } else {
             this.config = new SystemConfig();
           }
@@ -92,6 +94,7 @@ export class SystemConfigComponent implements OnInit {
             this.i18nSvc.loadLangData(language).subscribe(res => {
               this.i18nSvc.use(language, res);
               this.settings.setLayout('lang', language);
+              this.themeService.setTheme(this.config.theme);
               setTimeout(() => this.doc.location.reload());
             });
           } else {
@@ -102,23 +105,5 @@ export class SystemConfigComponent implements OnInit {
           this.notifySvc.error(this.i18nSvc.fanyi('common.notify.apply-fail'), error.msg);
         }
       );
-  }
-  changeTheme(theme: string): void {
-    const style = this.doc.createElement('link');
-    style.type = 'text/css';
-    style.rel = 'stylesheet';
-    if (theme == 'dark') {
-      style.id = 'dark-theme';
-      style.href = 'assets/style.dark.css';
-    } else if (theme == 'compact') {
-      style.id = 'compact-theme';
-      style.href = 'assets/style.compact.css';
-    } else {
-      const dom = document.getElementById('dark-theme');
-      if (dom) {
-        dom.remove();
-      }
-    }
-    this.doc.body.append(style);
   }
 }

@@ -5,28 +5,35 @@ sidebar_label: Help Center
 ---
 
 > Hertzbeat - An open source, real-time monitoring tool with custom-monitor and agentLess.  
-> Help documents and auxiliary information during use 
+> Help documents and auxiliary information during use
 
 ## 🔬 Monitoring services
 
-> Regularly collect and monitor the performance Metrics exposed by end-to-end services, provide visual interfaces, and process data for alarm and other service scheduling.      
+> Regularly collect and monitor the performance Metrics exposed by end-to-end services, provide visual interfaces, and process data for alarm and other service scheduling.
 > Planned monitoring type：application service, database, operating system, cloud native, open source middleware.
 
-### Application service monitoring 
+### Application service monitoring
 
-&emsp;&#x1F449;&emsp;[Website monitoring](website) <br /> 
-&emsp;&#x1F449;&emsp;[HTTP API](api) <br /> 
-&emsp;&#x1F449;&emsp;[PING Connectivity](ping) <br /> 
-&emsp;&#x1F449;&emsp;[Port availability](port) <br /> 
+&emsp;&#x1F449;&emsp;[Website monitoring](website) <br />
+&emsp;&#x1F449;&emsp;[HTTP API](api) <br />
+&emsp;&#x1F449;&emsp;[PING Connectivity](ping) <br />
+&emsp;&#x1F449;&emsp;[Port availability](port) <br />
 &emsp;&#x1F449;&emsp;[Full site monitoring](fullsite) <br />
 &emsp;&#x1F449;&emsp;[SSL Cert monitoring](ssl_cert) <br />
-&emsp;&#x1F449;&emsp;[JVM monitoring](jvm) <br />
-&emsp;&#x1F449;&emsp;[SpringBoot2.0](springboot2) <br />
 &emsp;&#x1F449;&emsp;[DNS monitoring](dns) <br />
 &emsp;&#x1F449;&emsp;[FTP monitoring](ftp) <br />
 &emsp;&#x1F449;&emsp;[Websocket monitoring](websocket) <br />
+&emsp;&#x1F449;&emsp;[MQTT connection monitoring](mqtt) <br />
 
-### Database monitoring  
+### Program monitoring
+
+&emsp;&#x1F449;&emsp;[Process](process) <br />
+&emsp;&#x1F449;&emsp;[JVM monitoring](jvm) <br />
+&emsp;&#x1F449;&emsp;[SpringBoot2.0](springboot2) <br />
+&emsp;&#x1F449;&emsp;[SpringBoot3.0](springboot3) <br />
+&emsp;&#x1F449;&emsp;[DynamicTp](dynamic_tp) <br />
+
+### Database monitoring
 
 &emsp;&#x1F449;&emsp;[MYSQL database monitoring](mysql) <br />
 &emsp;&#x1F449;&emsp;[MariaDB database monitoring](mariadb) <br />
@@ -38,13 +45,23 @@ sidebar_label: Help Center
 &emsp;&#x1F449;&emsp;[IoTDB database monitoring](iotdb) <br />
 &emsp;&#x1F449;&emsp;[TiDB database monitoring](tidb) <br />
 &emsp;&#x1F449;&emsp;[MongoDB database monitoring](mongodb) <br />
+&emsp;&#x1F449;&emsp;[NebulaGraph cluster monitoring](nebulagraph_cluster) <br />
 
-### Operating system monitoring     
+### Cache monitoring
+
+&emsp;&#x1F449;&emsp;[Redis monitoring](redis) <br />
+&emsp;&#x1F449;&emsp;[Memcached monitoring](memcached) <br />
+
+### Operating system monitoring
 
 &emsp;&#x1F449;&emsp;[Linux operating system monitoring](linux) <br />
 &emsp;&#x1F449;&emsp;[Windows operating system monitoring](windows) <br />
 &emsp;&#x1F449;&emsp;[Ubuntu operating system monitoring](ubuntu) <br />
 &emsp;&#x1F449;&emsp;[Centos operating system monitoring](centos) <br />
+&emsp;&#x1F449;&emsp;[FreeBSD operating system monitoring](freebsd) <br />
+&emsp;&#x1F449;&emsp;[RedHat operating system monitoring](redhat) <br />
+&emsp;&#x1F449;&emsp;[Rocky Linux operating system monitoring](rockylinux) <br />
+&emsp;&#x1F449;&emsp;[EulerOS monitoring](euleros) <br />
 
 ### Middleware monitoring
 
@@ -67,36 +84,50 @@ sidebar_label: Help Center
 
 &emsp;&#x1F449;&emsp;[Clickhouse](clickhouse) <br />
 &emsp;&#x1F449;&emsp;[ElasticSearch](elasticsearch) <br />
+&emsp;&#x1F449;&emsp;[Flink](flink) <br />
+
+### Ai LLM monitoring
+
+&emsp;&#x1F449;&emsp;[openai](openai) <br />
 
 ### Network monitoring
 
-&emsp;&#x1F449;&emsp;[Huawei-switch](huawei_switch) <br /> 
+&emsp;&#x1F449;&emsp;[Huawei-switch](huawei_switch) <br />
 
+### Server monitoring
 
 ***
 
-## 💡 Alarm service  
+## 💡 Alarm service
 
 > More liberal threshold alarm configuration (calculation expression), supports email, SMS, WebHook, DingDing, WeChat and FeiShu for alarm notification.
 > The positioning of alarm service is to trigger the threshold accurately and timely, and the alarm notification can be reached in time.
 
-### Alarm center  
+### Alarm center
 
 > The triggered alarm information center provides query and filtering of alarm deletion, alarm processing, mark unprocessed, alarm level status, etc.
 
-### Alarm configuration 
+More details see&emsp;&#x1F449;&emsp;[Alarm center](alarm_center)
+
+### Alarm configuration
 
 > The Metric threshold configuration provides the Metric threshold configuration in the form of expression, which can set the alarm level, trigger times, alarm notification template and whether it is enabled, correlation monitoring and other functions.
 
-More details see&emsp;&#x1F449;&emsp;[Threshold alarm](alert_threshold) <br /> 
-&emsp;&emsp;&emsp;&#x1F449;&emsp;[Threshold expression](alert_threshold_expr)   
+More details see&emsp;&#x1F449;&emsp;[Threshold alarm](alert_threshold) <br />
+&emsp;&emsp;&emsp;&#x1F449;&emsp;[Threshold expression](alert_threshold_expr)
 
-### Alarm notification  
+### Alarm reduce
 
-> After triggering the alarm information, in addition to being displayed in the alarm center list, it can also be notified to the designated recipient in a specified way (e-mail, wechat and FeiShu etc.)   
-> Alarm notification provides different types of notification methods, such as email recipient, enterprise wechat robot notification, DingDing robot notification, and FeiShu robot notification.   
-> After setting the receiver, you need to set the associated alarm notification strategy to configure which alarm information is sent to which receiver.   
+> Combine related alarms through alarm grouping, alarm suppression and other functions to reduce the alarm storm caused by one event, reduce alarm noise and improve alarm response efficiency.
 
+More details see&emsp;&#x1F449;&emsp;[Alarm grouping](alarm_group) <br />
+&emsp;&emsp;&emsp;&#x1F449;&emsp;[Alarm inhibit](alarm_inhibit)
+
+### Alarm notification
+
+> After triggering the alarm information, in addition to being displayed in the alarm center list, it can also be notified to the designated recipient in a specified way (e-mail, wechat and FeiShu etc.)
+> Alarm notification provides different types of notification methods, such as email recipient, enterprise wechat robot notification, DingDing robot notification, and FeiShu robot notification.
+> After setting the receiver, you need to set the associated alarm notification strategy to configure which alarm information is sent to which receiver.
 
 &emsp;&#x1F449;&emsp;[Configure Email Notification](alert_email) <br />
 &emsp;&#x1F449;&emsp;[Configure Discord Notification](alert_webhook) <br />
@@ -107,3 +138,7 @@ More details see&emsp;&#x1F449;&emsp;[Threshold alarm](alert_threshold) <br />
 &emsp;&#x1F449;&emsp;[Configure DingDing Robot Notification](alert_dingtalk) <br />
 &emsp;&#x1F449;&emsp;[Configure FeiShu Robot Notification](alert_feishu) <br />
 &emsp;&#x1F449;&emsp;[Configure Huawei Cloud SMN Notification](alert_smn) <br />
+
+### Plugins
+
+&emsp;&#x1F449;&emsp;[Plugin](plugin) <br />

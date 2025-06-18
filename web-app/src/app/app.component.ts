@@ -6,6 +6,8 @@ import { environment } from '@env/environment';
 import { NzModalService } from 'ng-zorro-antd/modal';
 import { VERSION as VERSION_ZORRO } from 'ng-zorro-antd/version';
 
+import { ThemeService } from './service/theme.service';
+
 @Component({
   selector: 'app-root',
   template: ` <router-outlet></router-outlet> `

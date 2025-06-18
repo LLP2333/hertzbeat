@@ -29,7 +29,7 @@ param:
   monitorUDP: "{{randAlpha 6}}"
   monitorWebsite: "{{randAlpha 6}}"
   monitorFTP: "{{randAlpha 6}}"
-  tagName: "{{randAlpha 3}}"
+  labelName: "{{randAlpha 3}}"
 items:
 - name: login
   request:
@@ -58,11 +58,6 @@ items:
       }
   expect:
     statusCode: 409
-- name: missing-auth-header
-  request:
-    api: /api/monitors
-  expect:
-    statusCode: 401
 - name: monitorList
   request:
     api: /api/monitors?pageIndex=0&pageSize=8
@@ -70,15 +65,12 @@ items:
       Authorization: Bearer {{.login.data.token}}
   expect:
     bodyFieldsExpect:
-      code: 0
-- name: createHTTPMonitor
+      code: "0"
+- name: missing-auth-header
   request:
-    api: /api/monitor
-    method: POST
-    header:
-      Authorization: Bearer {{.login.data.token}}
-      Content-type: application/json
-    bodyFromFile: data/monitor-http.json
+    api: /api/monitors
+  expect:
+    statusCode: 401
 - name: createSitemapMonitor
   request:
     api: /api/monitor
@@ -87,6 +79,26 @@ items:
       Authorization: Bearer {{.login.data.token}}
       Content-type: application/json
     bodyFromFile: data/monitor-sitemap.json
+- name: listSitemapMonitor
+  request:
+    api: /api/monitors?pageIndex=0&pageSize=8&app=fullsite
+    header:
+      Authorization: Bearer {{.login.data.token}}
+- name: cancelSitemapMonitor
+  request:
+    api: /api/monitors/manage?ids={{(index .listSitemapMonitor.data.content 0).id | int64}}
+    query:
+      type: JSON
+    method: DELETE
+    header:
+      Authorization: Bearer {{.login.data.token}}
+- name: deleteSitemapMonitor
+  request:
+    api: /api/monitors?ids={{(index .listSitemapMonitor.data.content 0).id | int64}}
+    method: DELETE
+    header:
+      Authorization: Bearer {{.login.data.token}}
+
 - name: createPortMonitor
   request:
     api: /api/monitor
@@ -95,6 +107,26 @@ items:
       Authorization: Bearer {{.login.data.token}}
       Content-type: application/json
     bodyFromFile: data/monitor-port.json
+- name: listPortMonitor
+  request:
+    api: /api/monitors?pageIndex=0&pageSize=8&app=port
+    header:
+      Authorization: Bearer {{.login.data.token}}
+- name: cancelPortMonitor
+  request:
+    api: /api/monitors/manage?ids={{(index .listPortMonitor.data.content 0).id | int64}}
+    query:
+      type: JSON
+    method: DELETE
+    header:
+      Authorization: Bearer {{.login.data.token}}
+- name: deletePortMonitor
+  request:
+    api: /api/monitors?ids={{(index .listPortMonitor.data.content 0).id | int64}}
+    method: DELETE
+    header:
+      Authorization: Bearer {{.login.data.token}}
+
 - name: createSSLMonitor
   request:
     api: /api/monitor
@@ -103,6 +135,26 @@ items:
       Authorization: Bearer {{.login.data.token}}
       Content-type: application/json
     bodyFromFile: data/monitor-ssl.json
+- name: listSSLMonitor
+  request:
+    api: /api/monitors?pageIndex=0&pageSize=8&app=ssl_cert
+    header:
+      Authorization: Bearer {{.login.data.token}}
+- name: cancelSSLMonitor
+  request:
+    api: /api/monitors/manage?ids={{(index .listSSLMonitor.data.content 0).id | int64}}
+    query:
+      type: JSON
+    method: DELETE
+    header:
+      Authorization: Bearer {{.login.data.token}}
+- name: deleteSSLMonitor
+  request:
+    api: /api/monitors?ids={{(index .listSSLMonitor.data.content 0).id | int64}}
+    method: DELETE
+    header:
+      Authorization: Bearer {{.login.data.token}}
+
 - name: createPingMonitor
   request:
     api: /api/monitor
@@ -111,6 +163,26 @@ items:
       Authorization: Bearer {{.login.data.token}}
       Content-type: application/json
     bodyFromFile: data/monitor-ping.json
+- name: listPingMonitor
+  request:
+    api: /api/monitors?pageIndex=0&pageSize=8&app=ping
+    header:
+      Authorization: Bearer {{.login.data.token}}
+- name: cancelPingMonitor
+  request:
+    api: /api/monitors/manage?ids={{(index .listPingMonitor.data.content 0).id | int64}}
+    query:
+      type: JSON
+    method: DELETE
+    header:
+      Authorization: Bearer {{.login.data.token}}
+- name: deletePingMonitor
+  request:
+    api: /api/monitors?ids={{(index .listPingMonitor.data.content 0).id | int64}}
+    method: DELETE
+    header:
+      Authorization: Bearer {{.login.data.token}}
+
 - name: createUDPMonitor
   request:
     api: /api/monitor
@@ -119,6 +191,26 @@ items:
       Authorization: Bearer {{.login.data.token}}
       Content-type: application/json
     bodyFromFile: data/monitor-udp.json
+- name: listUDPMonitor
+  request:
+    api: /api/monitors?pageIndex=0&pageSize=8&app=udp_port
+    header:
+      Authorization: Bearer {{.login.data.token}}
+- name: cancelUDPMonitor
+  request:
+    api: /api/monitors/manage?ids={{(index .listUDPMonitor.data.content 0).id | int64}}
+    query:
+      type: JSON
+    method: DELETE
+    header:
+      Authorization: Bearer {{.login.data.token}}
+- name: deleteUDPMonitor
+  request:
+    api: /api/monitors?ids={{(index .listUDPMonitor.data.content 0).id | int64}}
+    method: DELETE
+    header:
+      Authorization: Bearer {{.login.data.token}}
+
 - name: createWebsiteMonitor
   request:
     api: /api/monitor
@@ -127,6 +219,26 @@ items:
       Authorization: Bearer {{.login.data.token}}
       Content-type: application/json
     bodyFromFile: data/monitor-website.json
+- name: listWebsiteMonitor
+  request:
+    api: /api/monitors?pageIndex=0&pageSize=8&app=website
+    header:
+      Authorization: Bearer {{.login.data.token}}
+- name: cancelWebsiteMonitor
+  request:
+    api: /api/monitors/manage?ids={{(index .listWebsiteMonitor.data.content 0).id | int64}}
+    query:
+      type: JSON
+    method: DELETE
+    header:
+      Authorization: Bearer {{.login.data.token}}
+- name: deleteWebsiteMonitor
+  request:
+    api: /api/monitors?ids={{(index .listWebsiteMonitor.data.content 0).id | int64}}
+    method: DELETE
+    header:
+      Authorization: Bearer {{.login.data.token}}
+
 - name: createFTPMonitor
   request:
     api: /api/monitor
@@ -135,32 +247,54 @@ items:
       Authorization: Bearer {{.login.data.token}}
       Content-type: application/json
     bodyFromFile: data/monitor-ftp.json
+- name: listFTPMonitor
+  request:
+    api: /api/monitors?pageIndex=0&pageSize=8&app=ftp
+    header:
+      Authorization: Bearer {{.login.data.token}}
+- name: cancelFTPMonitor
+  request:
+    api: /api/monitors/manage?ids={{(index .listFTPMonitor.data.content 0).id | int64}}
+    query:
+      type: JSON
+    method: DELETE
+    header:
+      Authorization: Bearer {{.login.data.token}}
+- name: deleteFTPMonitor
+  request:
+    api: /api/monitors?ids={{(index .listFTPMonitor.data.content 0).id | int64}}
+    method: DELETE
+    header:
+      Authorization: Bearer {{.login.data.token}}
+
+- name: createHTTPMonitor
+  request:
+    api: /api/monitor
+    method: POST
+    header:
+      Authorization: Bearer {{.login.data.token}}
+      Content-type: application/json
+    bodyFromFile: data/monitor-http.json
 - name: listHTTPMonitor
   request:
-    api: /api/monitors
-    query:
-      pageIndex: 0
-      pageSize: 8
-      app: api
+    api: /api/monitors?pageIndex=0&pageSize=8&app=api
     header:
       Authorization: Bearer {{.login.data.token}}
 - name: cancelHTTPMonitor
   request:
-    api: /api/monitors/manage
+    api: /api/monitors/manage?ids={{(index .listHTTPMonitor.data.content 0).id | int64}}
     query:
-      ids: "{{(index .listHTTPMonitor.data.content 0).id}}"
       type: JSON
     method: DELETE
     header:
       Authorization: Bearer {{.login.data.token}}
 - name: deleteHTTPMonitor
   request:
-    api: /api/monitors
-    query:
-      ids: "{{(index .listHTTPMonitor.data.content 0).id}}"
+    api: /api/monitors?ids={{(index .listHTTPMonitor.data.content 0).id | int64}}
     method: DELETE
     header:
       Authorization: Bearer {{.login.data.token}}
+
 - name: listAlertDefines
   request:
     api: /api/alert/defines
@@ -168,15 +302,13 @@ items:
       Authorization: Bearer {{.login.data.token}}
 - name: deleteAlertDefine
   request:
-    api: /api/alert/defines
-    query:
-      ids: "{{(index .listAlertDefine.data.content 0).id}}"
+    api: /api/alert/defines?ids=1
     method: DELETE
     header:
       Authorization: Bearer {{.login.data.token}}
-- name: listAlertConverges
+- name: listAlertGroupConverges
   request:
-    api: /api/alert/converges
+    api: /api/alert/groups
     header:
       Authorization: Bearer {{.login.data.token}}
 - name: listAlertSilences
@@ -184,9 +316,9 @@ items:
     api: /api/alert/silences
     header:
       Authorization: Bearer {{.login.data.token}}
-- name: listAlerts
+- name: listGroupAlerts
   request:
-    api: /api/alerts
+    api: /api/alerts/group
     header:
       Authorization: Bearer {{.login.data.token}}
 - name: listReceivers
@@ -210,39 +342,35 @@ items:
     header:
       Authorization: Bearer {{.login.data.token}}
 
-## Tag
-- name: createTag
+## Label
+- name: createLabel
   request:
-    api: /api/tag
+    api: /api/label
     method: POST
     header:
       Authorization: Bearer {{.login.data.token}}
       Content-type: application/json
     body: |
-      [
-        {
-          "color": "#ff4081",
-          "name": "{{.param.tagName}}"
-        }
-      ]
-- name: listTags
+      {
+        "name": "{{.param.labelName}}"
+      }
+- name: listLabels
   request:
-    api: /api/tag
+    api: /api/label?pageIndex=0&pageSize=8&type=1
     header:
       Authorization: Bearer {{.login.data.token}}
-- name: updateTag
+- name: updateLabel
   request:
-    api: /api/tag
+    api: /api/label
     method: PUT
     header:
       Authorization: Bearer {{.login.data.token}}
       Content-type: application/json
     body: |
       {
-        "id": {{(index .listTags.data.content 0).id}},
+        "id": {{(index .listLabels.data.content 0).id | int64}},
         "name": "{{randAlpha 3}}",
-        "value": "{{randAlpha 3}}",
-        "color": "#ff4081",
+        "tagValue": "{{randAlpha 3}}",
         "type": 1,
         "creator": "admin",
         "modifier": "admin"
@@ -250,11 +378,9 @@ items:
   expect:
     bodyFieldsExpect:
       code: "0"
-- name: deleteTag
+- name: deleteLabel
   request:
-    api: /api/tag
-    query:
-      ids: "{{(index .listTags.data.content 0).id}}"
+    api: /api/label?ids={{(index .listLabels.data.content 0).id | int64}}
     method: DELETE
     header:
       Authorization: Bearer {{.login.data.token}}

@@ -22,4 +22,5 @@ export class Param {
   field!: string;
   type: number | undefined;
   paramValue: any;
+  display: boolean = true;
 }

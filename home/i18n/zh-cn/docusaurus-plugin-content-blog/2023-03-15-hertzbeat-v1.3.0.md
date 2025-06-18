@@ -10,36 +10,25 @@ keywords: [开源监控系统, 告警系统, Linux监控]
 
 官网: hertzbeat.com | tancloud.cn
 
-
-![](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/a9629ef5bb6e486cacddb899f1495c6e~tplv-k3u1fbpfcp-zoom-1.image)
-
-
-
 ### What is HertzBeat?
 
-> HertzBeat赫兹跳动 是一个拥有强大自定义监控能力，无需 Agent 的开源实时监控告警工具。     
-> 集 **监控+告警+通知** 为一体，支持对应用服务，应用程序，数据库，缓存，操作系统，大数据，中间件，Web服务器，云原生，网络，自定义等指标监控，阈值告警通知一步到位。   
+> HertzBeat赫兹跳动 是一个拥有强大自定义监控能力，无需 Agent 的开源实时监控告警工具。
+> 集 **监控+告警+通知** 为一体，支持对应用服务，应用程序，数据库，缓存，操作系统，大数据，中间件，Web服务器，云原生，网络，自定义等指标监控，阈值告警通知一步到位。
 > 支持更自由化的阈值规则(计算表达式)，`邮件` `Discord` `Slack` `Telegram` `钉钉` `微信` `飞书` `短信` `Webhook` 等方式及时送达。
-
+>
 > 我们将`Http, Jmx, Ssh, Snmp, Jdbc, Prometheus`等协议规范可配置化，您只需配置`YML`就能使用这些协议去自定义采集任何您想要的指标。
-
+>
 > 您相信只需定义YML就能立刻适配一款K8s或Docker等新的监控类型吗？
 
+**Github: <https://github.com/apache/hertzbeat>**
 
-![](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/4236e748f5ac4352b7cf4bb65ccf97aa~tplv-k3u1fbpfcp-zoom-1.image)
-
-
-**Github: https://github.com/apache/hertzbeat**
-
-**Gitee: https://gitee.com/hertzbeat/hertzbeat**
+**Gitee: <https://gitee.com/hertzbeat/hertzbeat>**
 
 ### v1.3.0 大版本来了
 
 经过一个月的迭代更新，HertzBeat v1.3.0 在上周末正式发布啦, **推荐升级食用**！
 
 - **支持在浏览器页面自定义监控**。hertzbeat拥有强大自定义监控能力，我们所有的已支持监控类型都映射为一个YML，之前用户使用自定义监控功能适配指标需要在后台编写YML文件并重启，体验欠佳且没有直观的感受。这次我们带来了自定义监控页面化，欢迎大家使用和分享贡献自己的监控类型定义。
-
-![](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/b5c9dd3e28c54c72b49a7470012a0c36~tplv-k3u1fbpfcp-zoom-1.image)
 
 - **支持对网络交换机的监控**。hertzbeat很早之前就支持了snmp协议，windows监控就是通过snmp协议来监控的，这个版本我们不仅支持了更多windows性能指标，还支持了snmp walk，适配了几款常见网络交换机的监控，欢迎贡献更多类型与指标给社区。
 
@@ -49,11 +38,10 @@ keywords: [开源监控系统, 告警系统, Linux监控]
 
 - 修复若干BUG，更完善的文档，重构了代码。
 
-----
-
+---
 只需要一条docker命令即可安装体验heartbeat
 
-`docker run -d -p 1157:1157 --name hertzbeat tancloud/hertzbeat`
+`docker run -d -p 1157:1157 --name hertzbeat apache/hertzbeat`
 
 感谢hertzbeat贡献者们的贡献！👍👍
 
@@ -89,11 +77,10 @@ Feature：
 26. [[webapp] change alert define trigger times from max 10 to max 999 #706](https://github.com/apache/hertzbeat/pull/706) @Grass-Life
 27. [[doc] change default locale i18n from zh-cn to en #725](https://github.com/apache/hertzbeat/pull/725)
 
-
 Bugfix.
 
 1. [[collector] bugfix oracle query error: ORA-01000 happen #618](https://github.com/apache/hertzbeat/pull/618)
-2. [[manager]bugfix:update flink fields name, use _ replace - avoid alert_threshold_expr problem. #622](https://github.com/apache/hertzbeat/pull/622) @cuipiheqiuqiu
+2. [[manager]bugfix:update flink fields name, use _replace - avoid alert_threshold_expr problem. #622](https://github.com/apache/hertzbeat/pull/622) @cuipiheqiuqiu
 3. [[webapp] fix rule days not change when edit old notice rule item #628](https://github.com/apache/hertzbeat/pull/628)
 4. [[webapp] update alert notice modal item span #630](https://github.com/apache/hertzbeat/pull/630)
 5. [Update issue.md #654](https://github.com/apache/hertzbeat/pull/654) @ycilry
@@ -115,14 +102,16 @@ Bugfix.
 21. [bugfix job metrics set concurrent modification exception #723](https://github.com/apache/hertzbeat/pull/723)
 22. [[script] modified the linux memory metrics specified script code #719](https://github.com/apache/hertzbeat/pull/719)
 23. [[webapp] bugfix the cover of the big screen is too small #724](https://github.com/apache/hertzbeat/pull/724)
-----     
+
+---
 
 升级注意⚠️.
 
 对于之前使用iotdb或者tdengine来存储指标数据的用户，需要修改 application.yml 来关闭JPA存储 `warehouse.store.jpa.enabled` 如下:
 
 修改 `application.yml` 并设置 `warehouse.store.jpa.enabled` 参数为 false
-```
+
+```yaml
 warehouse:
   store:
     jpa:
@@ -130,25 +119,26 @@ warehouse:
 ```
 
 执行SQL脚本
-```
+
+```shell
 ALTER table hzb_monitor modify job_id bigint default null;
 COMMIT;
 ```
 
-----
+---
 
 ## ⛄ Supported
 
--   网站监控, 端口可用性, Http Api, Ping连通性, Jvm, SiteMap全站, Ssl证书, SpringBoot, FTP服务器
--   Mysql, PostgreSQL, MariaDB, Redis, ElasticSearch, SqlServer, Oracle, MongoDB, 达梦, OpenGauss, ClickHouse, IoTDB, Redis集群
--   Linux, Ubuntu, CentOS, Windows
--   Tomcat, Nacos, Zookeeper, RabbitMQ, Flink, Kafka, ShenYu, DynamicTp, Jetty, ActiveMQ
--   Kubernetes, Docker
--   Huawei Switch, HPE Switch, TP-LINK Switch, Cisco Switch
--   和更多你的自定义监控。
--   通知支持 `Discord` `Slack` `Telegram` `邮件` `钉钉` `微信` `飞书` `短信` `Webhook`。
+- 网站监控, 端口可用性, Http Api, Ping连通性, Jvm, SiteMap全站, Ssl证书, SpringBoot, FTP服务器
+- Mysql, PostgreSQL, MariaDB, Redis, ElasticSearch, SqlServer, Oracle, MongoDB, 达梦, OpenGauss, ClickHouse, IoTDB, Redis集群
+- Linux, Ubuntu, CentOS, Windows
+- Tomcat, Nacos, Zookeeper, RabbitMQ, Flink, Kafka, ShenYu, DynamicTp, Jetty, ActiveMQ
+- Kubernetes, Docker
+- Huawei Switch, HPE Switch, TP-LINK Switch, Cisco Switch
+- 和更多你的自定义监控。
+- 通知支持 `Discord` `Slack` `Telegram` `邮件` `钉钉` `微信` `飞书` `短信` `Webhook`。
 
-----
+---
 
-**Github: https://github.com/apache/hertzbeat**      
-**Gitee: https://gitee.com/hertzbeat/hertzbeat**
+**Github: <https://github.com/apache/hertzbeat>**
+**Gitee: <https://gitee.com/hertzbeat/hertzbeat>**

@@ -12,6 +12,7 @@ import { catchError, map } from 'rxjs/operators';
 import { ICONS } from '../../../style-icons';
 import { ICONS_AUTO } from '../../../style-icons-auto';
 import { MemoryStorageService } from '../../service/memory-storage.service';
+import { ThemeService } from '../../service/theme.service';
 import { I18NService } from '../i18n/i18n.service';
 
 @Injectable({
@@ -28,12 +29,10 @@ export class StartupService {
     @Inject(DA_SERVICE_TOKEN) private tokenService: ITokenService,
     private httpClient: HttpClient,
     private router: Router,
-    private storageService: MemoryStorageService
+    private storageService: MemoryStorageService,
+    private themeService: ThemeService
   ) {
     iconSrv.addIcon(...ICONS_AUTO, ...ICONS);
-    iconSrv.fetchFromIconfont({
-      scriptUrl: './assets/img/icon-gitee.js'
-    });
   }
 
   public loadConfigResourceViaHttp(): Observable<void> {
@@ -42,7 +41,7 @@ export class StartupService {
     return zip(
       this.i18n.loadLangData(defaultLang),
       this.httpClient.get('./assets/app-data.json', { headers: headers }),
-      this.httpClient.get('/apps/hierarchy')
+      this.httpClient.get(`/apps/hierarchy?lang=${defaultLang}`)
     ).pipe(
       catchError((res: NzSafeAny) => {
         console.warn(`StartupService.load: Network request failed`, res);
@@ -89,6 +88,7 @@ export class StartupService {
         this.storageService.putData('hierarchy', menuData.data);
         this.menuService.resume();
         this.titleService.suffix = appData.app.name;
+        this.themeService.changeTheme(null);
       })
     );
   }

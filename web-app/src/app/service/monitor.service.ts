@@ -32,6 +32,7 @@ const manage_monitors_uri = '/monitors/manage';
 const export_monitors_uri = '/monitors/export';
 const summary_uri = '/summary';
 const warehouse_storage_status_uri = '/warehouse/storage/status';
+const grafana_dashboard_uri = '/grafana/dashboard';
 
 @Injectable({
   providedIn: 'root'
@@ -47,15 +48,11 @@ export class MonitorService {
     return this.http.put<Message<any>>(monitor_uri, body);
   }
 
-  public deleteMonitor(monitorId: number): Observable<Message<any>> {
-    return this.http.delete<Message<any>>(`${monitor_uri}/${monitorId}`);
-  }
-
   public deleteMonitors(monitorIds: Set<number>): Observable<Message<any>> {
     let httpParams = new HttpParams();
     monitorIds.forEach(monitorId => {
-      // 注意HttpParams是不可变对象 需要保存append后返回的对象为最新对象
-      // append方法可以叠加同一key, set方法会把key之前的值覆盖只留一个key-value
+      // HttpParams is unmodifiable, so we need to save the return value of append/set
+      // Method append can append same key, set will replace the previous value
       httpParams = httpParams.append('ids', monitorId);
     });
     const options = { params: httpParams };
@@ -65,8 +62,8 @@ export class MonitorService {
   public exportMonitors(monitorIds: Set<number>, type: string): Observable<HttpResponse<Blob>> {
     let httpParams = new HttpParams();
     monitorIds.forEach(monitorId => {
-      // 注意HttpParams是不可变对象 需要保存append后返回的对象为最新对象
-      // append方法可以叠加同一key, set方法会把key之前的值覆盖只留一个key-value
+      // HttpParams is unmodifiable, so we need to save the return value of append/set
+      // Method append can append same key, set will replace the previous value
       httpParams = httpParams.append('ids', monitorId);
     });
     httpParams = httpParams.append('type', type);
@@ -80,8 +77,8 @@ export class MonitorService {
   public cancelManageMonitors(monitorIds: Set<number>): Observable<Message<any>> {
     let httpParams = new HttpParams();
     monitorIds.forEach(monitorId => {
-      // 注意HttpParams是不可变对象 需要保存append后返回的对象为最新对象
-      // append方法可以叠加同一key, set方法会把key之前的值覆盖只留一个key-value
+      // HttpParams is unmodifiable, so we need to save the return value of append/set
+      // Method append can append same key, set will replace the previous value
       httpParams = httpParams.append('ids', monitorId);
       httpParams = httpParams.append('type', 'JSON');
     });
@@ -110,42 +107,10 @@ export class MonitorService {
     return this.http.get<Message<Monitor[]>>(`${monitors_uri}/${app}`);
   }
 
-  public getMonitors(
-    app: string | undefined,
-    tag: string | undefined,
-    pageIndex: number,
-    pageSize: number,
-    sortField?: string | null,
-    sortOrder?: string | null
-  ): Observable<Message<Page<Monitor>>> {
-    pageIndex = pageIndex ? pageIndex : 0;
-    pageSize = pageSize ? pageSize : 8;
-    // 注意HttpParams是不可变对象 需要保存set后返回的对象为最新对象
-    let httpParams = new HttpParams();
-    httpParams = httpParams.appendAll({
-      pageIndex: pageIndex,
-      pageSize: pageSize
-    });
-    if (app != undefined) {
-      httpParams = httpParams.append('app', app.trim());
-    }
-    if (tag != undefined) {
-      httpParams = httpParams.append('tag', tag);
-    }
-    if (sortField != null && sortOrder != null) {
-      httpParams = httpParams.appendAll({
-        sort: sortField,
-        order: sortOrder == 'ascend' ? 'asc' : 'desc'
-      });
-    }
-    const options = { params: httpParams };
-    return this.http.get<Message<Page<Monitor>>>(monitors_uri, options);
-  }
-
   public searchMonitors(
     app: string | undefined,
-    tag: string | undefined,
-    searchValue: string,
+    labels: string | undefined,
+    search: string,
     status: number,
     pageIndex: number,
     pageSize: number,
@@ -154,14 +119,14 @@ export class MonitorService {
   ): Observable<Message<Page<Monitor>>> {
     pageIndex = pageIndex ? pageIndex : 0;
     pageSize = pageSize ? pageSize : 8;
-    // 注意HttpParams是不可变对象 需要保存set后返回的对象为最新对象
+    // HttpParams is unmodifiable, so we need to save the return value of append/set
     let httpParams = new HttpParams();
     httpParams = httpParams.appendAll({
       pageIndex: pageIndex,
       pageSize: pageSize
     });
-    if (tag != undefined) {
-      httpParams = httpParams.append('tag', tag);
+    if (labels != undefined) {
+      httpParams = httpParams.append('labels', labels);
     }
     if (status != undefined && status != 9) {
       httpParams = httpParams.append('status', status);
@@ -175,9 +140,8 @@ export class MonitorService {
         order: sortOrder == 'ascend' ? 'asc' : 'desc'
       });
     }
-    if (searchValue != undefined && searchValue != '' && searchValue.trim() != '') {
-      httpParams = httpParams.append('name', searchValue);
-      httpParams = httpParams.append('host', searchValue);
+    if (search != undefined && search != '' && search.trim() != '') {
+      httpParams = httpParams.append('search', search);
     }
     const options = { params: httpParams };
     return this.http.get<Message<Page<Monitor>>>(monitors_uri, options);
@@ -202,7 +166,7 @@ export class MonitorService {
       interval: interval
     });
     const options = { params: httpParams };
-    return this.http.get<Message<any>>(`/monitor/${monitorId}/metric/${metricFull}`, options);
+    return this.http.get<Message<any>>(`${monitor_uri}/${monitorId}/metric/${metricFull}`, options);
   }
 
   public getAppsMonitorSummary(): Observable<Message<any>> {
@@ -211,5 +175,17 @@ export class MonitorService {
 
   public getWarehouseStorageServerStatus(): Observable<Message<any>> {
     return this.http.get<Message<any>>(warehouse_storage_status_uri);
+  }
+
+  public getGrafanaDashboard(monitorId: number): Observable<Message<any>> {
+    return this.http.get<Message<any>>(`${grafana_dashboard_uri}?monitorId=${monitorId}`);
+  }
+
+  public deleteGrafanaDashboard(monitorId: number): Observable<Message<any>> {
+    return this.http.delete<Message<any>>(`${grafana_dashboard_uri}?monitorId=${monitorId}`);
+  }
+
+  copyMonitor(id: number): Observable<any> {
+    return this.http.post<Message<any>>(`${monitor_uri}/copy/${id}`, null);
   }
 }

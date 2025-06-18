@@ -17,44 +17,41 @@
  * under the License.
  */
 
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { I18NService } from '@core';
-import { ALAIN_I18N_TOKEN } from '@delon/theme';
-import { NzMessageService } from 'ng-zorro-antd/message';
+import { ALAIN_I18N_TOKEN, MenuService } from '@delon/theme';
 import { NzModalService } from 'ng-zorro-antd/modal';
 import { ModalButtonOptions } from 'ng-zorro-antd/modal/modal-types';
 import { NzNotificationService } from 'ng-zorro-antd/notification';
-import { NzTableQueryParams } from 'ng-zorro-antd/table';
 import { NzUploadChangeParam } from 'ng-zorro-antd/upload';
 import { finalize } from 'rxjs/operators';
 
 import { Monitor } from '../../../pojo/Monitor';
-import { AppDefineService } from '../../../service/app-define.service';
 import { MemoryStorageService } from '../../../service/memory-storage.service';
 import { MonitorService } from '../../../service/monitor.service';
-import { formatTagName } from '../../../shared/utils/common-util';
+import { findDeepestSelected, renderLabelColor } from '../../../shared/utils/common-util';
 
 @Component({
   selector: 'app-monitor-list',
   templateUrl: './monitor-list.component.html',
   styleUrls: ['./monitor-list.component.less']
 })
-export class MonitorListComponent implements OnInit {
+export class MonitorListComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private modal: NzModalService,
     private notifySvc: NzNotificationService,
     private monitorSvc: MonitorService,
-    private messageSvc: NzMessageService,
     private storageSvc: MemoryStorageService,
-    private appDefineSvc: AppDefineService,
+    private menuService: MenuService,
     @Inject(ALAIN_I18N_TOKEN) private i18nSvc: I18NService
   ) {}
 
+  isDefaultListMenu!: boolean;
   app!: string | undefined;
-  tag!: string | undefined;
+  labels!: string | undefined;
   pageIndex: number = 1;
   pageSize: number = 8;
   total: number = 0;
@@ -63,30 +60,34 @@ export class MonitorListComponent implements OnInit {
   checkedMonitorIds = new Set<number>();
   isSwitchExportTypeModalVisible = false;
   exportJsonButtonLoading = false;
-  exportYamlButtonLoading = false;
   exportExcelButtonLoading = false;
-  // 过滤搜索
   filterContent!: string;
   filterStatus: number = 9;
   // app type search filter
   appSwitchModalVisible = false;
-  appSearchContent = '';
+  appSwitchModalVisibleType = 0;
   appSearchOrigin: any[] = [];
-  appSearchResult: any[] = [];
   appSearchLoading = false;
+  intervalId: any;
+  // save the current sorting status
+  currentSortField: string | null = null;
+  currentSortOrder: string | null = null;
 
   switchExportTypeModalFooter: ModalButtonOptions[] = [
     { label: this.i18nSvc.fanyi('common.button.cancel'), type: 'default', onClick: () => (this.isSwitchExportTypeModalVisible = false) }
   ];
 
   ngOnInit(): void {
+    this.menuService.change.subscribe(menus => {
+      this.isDefaultListMenu = findDeepestSelected(menus).link === '/monitors';
+    });
     this.route.queryParamMap.subscribe(paramMap => {
       let appStr = paramMap.get('app');
-      let tagStr = paramMap.get('tag');
-      if (tagStr != null) {
-        this.tag = tagStr;
+      let labelsStr = paramMap.get('labels');
+      if (labelsStr != null) {
+        this.labels = labelsStr;
       } else {
-        this.tag = undefined;
+        this.labels = undefined;
       }
       if (appStr != null) {
         this.app = appStr;
@@ -99,12 +100,31 @@ export class MonitorListComponent implements OnInit {
       this.tableLoading = true;
       this.loadMonitorTable();
     });
+    // Set up an interval to refresh the table every 2 minutes
+    this.intervalId = setInterval(() => {
+      this.sync();
+    }, 120000); // 120000 ms = 2 minutes
+  }
+
+  ngOnDestroy(): void {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
+  }
+
+  onAppChanged(): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { ...this.route.snapshot.queryParams, app: this.app },
+      queryParamsHandling: 'merge'
+    });
   }
 
   onFilterSearchMonitors() {
     this.tableLoading = true;
+    this.pageIndex = 1;
     let filter$ = this.monitorSvc
-      .searchMonitors(this.app, this.tag, this.filterContent, this.filterStatus, this.pageIndex - 1, this.pageSize)
+      .searchMonitors(this.app, this.labels, this.filterContent, this.filterStatus, this.pageIndex - 1, this.pageSize)
       .subscribe(
         message => {
           filter$.unsubscribe();
@@ -129,11 +149,7 @@ export class MonitorListComponent implements OnInit {
   }
 
   sync() {
-    this.loadMonitorTable();
-  }
-
-  clearCurrentTag() {
-    this.router.navigateByUrl(`/monitors`);
+    this.loadMonitorTable(this.currentSortField, this.currentSortOrder);
   }
 
   getAppIconName(app: string | undefined): string {
@@ -142,42 +158,44 @@ export class MonitorListComponent implements OnInit {
       return item.value == app;
     });
     if (find == undefined) {
-      return this.i18nSvc.fanyi('monitor_icon.center');
+      return this.i18nSvc.fanyi('monitor.icon.center');
     }
-    let icon = this.i18nSvc.fanyi(`monitor_icon.${find.category}`);
-    if (icon == `monitor_icon.${find.category}`) {
-      return this.i18nSvc.fanyi('monitor_icon.center');
+    let icon = this.i18nSvc.fanyi(`monitor.icon.${find.category}`);
+    if (icon == `monitor.icon.${find.category}`) {
+      return this.i18nSvc.fanyi('monitor.icon.center');
     }
     return icon;
   }
 
   loadMonitorTable(sortField?: string | null, sortOrder?: string | null) {
     this.tableLoading = true;
-    let monitorInit$ = this.monitorSvc.getMonitors(this.app, this.tag, this.pageIndex - 1, this.pageSize, sortField, sortOrder).subscribe(
-      message => {
-        this.tableLoading = false;
-        this.checkedAll = false;
-        this.checkedMonitorIds.clear();
-        if (message.code === 0) {
-          let page = message.data;
-          this.monitors = page.content;
-          this.pageIndex = page.number + 1;
-          this.total = page.totalElements;
-        } else {
-          console.warn(message.msg);
+    let monitorInit$ = this.monitorSvc
+      .searchMonitors(this.app, this.labels, this.filterContent, this.filterStatus, this.pageIndex - 1, this.pageSize, sortField, sortOrder)
+      .subscribe(
+        message => {
+          this.tableLoading = false;
+          this.checkedAll = false;
+          this.checkedMonitorIds.clear();
+          if (message.code === 0) {
+            let page = message.data;
+            this.monitors = page.content;
+            this.pageIndex = page.number + 1;
+            this.total = page.totalElements;
+          } else {
+            console.warn(message.msg);
+          }
+          monitorInit$.unsubscribe();
+        },
+        error => {
+          this.tableLoading = false;
+          monitorInit$.unsubscribe();
         }
-        monitorInit$.unsubscribe();
-      },
-      error => {
-        this.tableLoading = false;
-        monitorInit$.unsubscribe();
-      }
-    );
+      );
   }
   changeMonitorTable(sortField?: string | null, sortOrder?: string | null) {
     this.tableLoading = true;
     let monitorInit$ = this.monitorSvc
-      .searchMonitors(this.app, this.tag, this.filterContent, this.filterStatus, this.pageIndex - 1, this.pageSize, sortField, sortOrder)
+      .searchMonitors(this.app, this.labels, this.filterContent, this.filterStatus, this.pageIndex - 1, this.pageSize, sortField, sortOrder)
       .subscribe(
         message => {
           this.tableLoading = false;
@@ -206,8 +224,6 @@ export class MonitorListComponent implements OnInit {
       return;
     }
     this.router.navigateByUrl(`/monitors/${monitorId}/edit`);
-    // 参数样例
-    // this.router.navigate(['/monitors/new'],{queryParams: {app: "linux"}});
   }
 
   onDeleteOneMonitor(monitorId: number) {
@@ -249,15 +265,20 @@ export class MonitorListComponent implements OnInit {
   }
 
   onImportMonitors(info: NzUploadChangeParam): void {
-    if (info.file.response) {
+    console.log(info.type);
+    if (info.type === 'start') {
+      this.notifySvc.info(
+        this.i18nSvc.fanyi('common.notice'),
+        this.i18nSvc.fanyi('common.notify.import-submitted', { taskName: info.file.name })
+      );
+    }
+    if (info.type === 'success' && info.file.response) {
       this.tableLoading = true;
       const message = info.file.response;
       if (message.code === 0) {
-        this.notifySvc.success(this.i18nSvc.fanyi('common.notify.import-success'), '');
         this.loadMonitorTable();
       } else {
         this.tableLoading = false;
-        this.notifySvc.error(this.i18nSvc.fanyi('common.notify.import-fail'), message.msg);
       }
     }
   }
@@ -286,6 +307,10 @@ export class MonitorListComponent implements OnInit {
         this.notifySvc.error(this.i18nSvc.fanyi('common.notify.delete-fail'), error.msg);
       }
     );
+    // delete grafana dashboard
+    for (let monitorId of monitors) {
+      this.deleteGrafanaDashboard(monitorId);
+    }
   }
 
   updatePageIndex(delSize: number) {
@@ -305,15 +330,11 @@ export class MonitorListComponent implements OnInit {
       case 'EXCEL':
         this.exportExcelButtonLoading = true;
         break;
-      case 'YAML':
-        this.exportYamlButtonLoading = true;
-        break;
     }
     const exportMonitors$ = this.monitorSvc
       .exportMonitors(this.checkedMonitorIds, type)
       .pipe(
         finalize(() => {
-          this.exportYamlButtonLoading = false;
           this.exportExcelButtonLoading = false;
           this.exportJsonButtonLoading = false;
           exportMonitors$.unsubscribe();
@@ -443,7 +464,7 @@ export class MonitorListComponent implements OnInit {
     );
   }
 
-  // begin: 列表多选逻辑
+  // begin: List multiple choice paging
   checkedAll: boolean = false;
 
   onAllChecked(checked: boolean) {
@@ -462,87 +483,99 @@ export class MonitorListComponent implements OnInit {
     }
   }
 
-  // end: 列表多选逻辑
+  // end: List multiple choice paging
 
   notifyCopySuccess() {
-    this.messageSvc.success(this.i18nSvc.fanyi('common.notify.copy-success'), { nzDuration: 800 });
+    this.notifySvc.success(this.i18nSvc.fanyi('common.notify.copy-success'), '');
   }
 
-  /**
-   * 分页回调
-   *
-   * @param params 页码信息
-   */
-  onTablePageChange(params: NzTableQueryParams) {
-    const { pageSize, pageIndex, sort, filter } = params;
+  onPageIndexChange(pageIndex: number) {
     this.pageIndex = pageIndex;
-    this.pageSize = pageSize;
-    const currentSort = sort.find(item => item.value !== null);
-    const sortField = (currentSort && currentSort.key) || null;
-    const sortOrder = (currentSort && currentSort.value) || null;
-    this.changeMonitorTable(sortField, sortOrder);
+    this.changeMonitorTable(this.currentSortField, this.currentSortOrder);
   }
 
   // begin: app type search filter
 
+  onSearchAppClicked() {
+    this.appSwitchModalVisibleType = 1;
+    this.onAppSwitchModalOpen();
+  }
+
   onAppSwitchModalOpen() {
     this.appSwitchModalVisible = true;
     this.appSearchLoading = true;
-    const getHierarchy$ = this.appDefineSvc
-      .getAppHierarchy(this.i18nSvc.defaultLang)
-      .pipe(
-        finalize(() => {
-          getHierarchy$.unsubscribe();
-          this.appSearchLoading = false;
-        })
-      )
-      .subscribe(
-        message => {
-          if (message.code === 0) {
-            this.appSearchOrigin = [];
-            this.appSearchResult = [];
-            message.data.forEach((app: any) => {
-              app.categoryLabel = this.i18nSvc.fanyi(`monitor.category.${app.category}`);
-              if (app.categoryLabel == `monitor.category.${app.category}`) {
-                app.categoryLabel = this.i18nSvc.fanyi('monitor.category.custom');
-              }
-              this.appSearchOrigin.push(app);
-            });
-            this.appSearchOrigin = this.appSearchOrigin.sort((a, b) => a.category?.localeCompare(b.category));
-            this.appSearchResult = this.appSearchOrigin;
-          } else {
-            console.warn(message.msg);
-          }
-        },
-        error => {
-          console.warn(error.msg);
-        }
-      );
+    let appMenus: Record<string, any> = {};
+    let hierarchy: any[] = this.storageSvc.getData('hierarchy');
+    hierarchy.forEach((app: any) => {
+      if (app.category == '__system__') {
+        return;
+      }
+      let menus = appMenus[app.category];
+      app.categoryLabel = this.i18nSvc.fanyi(`menu.monitor.${app.category}`);
+      if (app.categoryLabel == `menu.monitor.${app.category}`) {
+        app.categoryLabel = app.category.toUpperCase();
+      }
+      if (menus == undefined) {
+        menus = { label: app.categoryLabel, child: [app] };
+      } else {
+        menus.child.push(app);
+      }
+      appMenus[app.category] = menus;
+    });
+    this.appSearchOrigin = Object.entries(appMenus);
+    this.appSearchOrigin.sort((a, b) => {
+      return b[1].length - a[1].length;
+    });
+    this.appSearchLoading = false;
   }
 
   onAppSwitchModalCancel() {
     this.appSwitchModalVisible = false;
+    this.appSwitchModalVisibleType = 0;
   }
 
   gotoMonitorAddDetail(app: string) {
-    this.router.navigateByUrl(`/monitors/new?app=${app}`);
-  }
-
-  searchSwitchApp() {
-    if (this.appSearchContent === '' || this.appSearchContent == null) {
-      this.appSearchResult = this.appSearchOrigin;
+    if (this.appSwitchModalVisibleType === 1) {
+      this.app = app;
+      this.onAppChanged();
+      this.onAppSwitchModalCancel();
     } else {
-      this.appSearchResult = this.appSearchOrigin.filter(
-        app =>
-          app.label.toLowerCase().includes(this.appSearchContent.toLowerCase()) ||
-          app.categoryLabel.toLowerCase().includes(this.appSearchContent.toLowerCase()) ||
-          app.value.toLowerCase().includes(this.appSearchContent.toLowerCase()) ||
-          app.category.toLowerCase().includes(this.appSearchContent.toLowerCase())
-      );
+      this.router.navigateByUrl(`/monitors/new?app=${app}`);
     }
   }
 
   // end: app type search filter
 
-  protected readonly sliceTagName = formatTagName;
+  deleteGrafanaDashboard(monitorId: number) {
+    this.monitorSvc.deleteGrafanaDashboard(monitorId).subscribe(
+      message => {
+        if (message.code === 0) {
+          console.log('delete grafana dashboard success');
+        } else {
+          console.warn(message.msg);
+        }
+      },
+      error => {
+        console.error(error.msg);
+      }
+    );
+  }
+
+  protected readonly getLabelColor = renderLabelColor;
+
+  copyMonitor(monitorId: number) {
+    this.monitorSvc.copyMonitor(monitorId).subscribe(
+      message => {
+        if (message.code === 0) {
+          this.notifySvc.success(this.i18nSvc.fanyi('monitor.copy.success'), '');
+          this.loadMonitorTable();
+        } else {
+          this.notifySvc.error(this.i18nSvc.fanyi('monitor.copy.failed'), message.msg);
+        }
+      },
+      error => {
+        this.notifySvc.error(this.i18nSvc.fanyi('monitor.copy.failed'), error.msg);
+      }
+    );
+  }
 }

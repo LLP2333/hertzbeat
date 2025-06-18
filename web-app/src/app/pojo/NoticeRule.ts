@@ -25,11 +25,9 @@ export class NoticeRule {
   templateId!: number | null;
   templateName!: string | null;
   enable: boolean = true;
-  // 是否转发所有
+  // forward all or not
   filterAll: boolean = true;
-  // 告警级别过滤
-  priorities!: number[];
-  tags!: TagItem[];
+  labels!: Record<string, string>;
   days!: number[];
   periodStart!: Date;
   periodEnd!: Date;
@@ -37,9 +35,4 @@ export class NoticeRule {
   modifier!: string;
   gmtCreate!: number;
   gmtUpdate!: number;
-}
-
-export class TagItem {
-  name!: string;
-  value!: string;
 }

@@ -17,13 +17,14 @@
  * under the License.
  */
 
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { Message } from '../pojo/Message';
 
 const account_auth_refresh_uri = '/account/auth/refresh';
+const account_token = '/account/token';
 
 @Injectable({
   providedIn: 'root'
@@ -32,6 +33,13 @@ export class AuthService {
   constructor(private http: HttpClient) {}
 
   public refreshToken(refreshToken: string): Observable<Message<any>> {
-    return this.http.get<Message<any>>(`${account_auth_refresh_uri}/${refreshToken}`);
+    let body = {
+      token: refreshToken
+    };
+    return this.http.post<Message<any>>(`${account_auth_refresh_uri}`, body);
+  }
+
+  public generateToken(): Observable<Message<any>> {
+    return this.http.post<Message<any>>(`${account_token}` + '/generate', {});
   }
 }

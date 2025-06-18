@@ -14,7 +14,7 @@ Home: hertzbeat.com | tancloud.cn
 Hi guys! HertzBeat v1.2.0 is coming. This version supports more powerful metrics collect jsonpath, upgrade springboot version to 2.7.4, support This version supports more powerful metrics collect jsonpath, upgrade springboot version to 2.7.4, support metrics unit convert display, and more. Fixed several bugs and improved the overall stable usability.
 
 Only one docker command is needed to install and experience heartbeat:
-`docker run -d -p 1157:1157 --name hertzbeat tancloud/hertzbeat`
+`docker run -d -p 1157:1157 --name hertzbeat apache/hertzbeat`
 
 Thanks to the contributors! 👍👍 @Ceilzcx @Privauto @VampireAchao @DreamGirl524 @CharlieXCL @emrys-he @SxLiuYu @tomsun28
 
@@ -45,34 +45,35 @@ Bugfixes.
 2. [[web-app] fix redirect when monitors app is null #286](https://github.com/apache/hertzbeat/pull/286)
 3. [[alerter] bugfix aviator expression match npe #297](https://github.com/apache/hertzbeat/pull/297)
 4. [[doc] fix project name error #294](https://github.com/apache/hertzbeat/pull/294) contributed by @CharlieXCL
-5. [[common]feature:use "apache.http.conn.util" replace "sun.net.util" for upgrading java version #299](https://github.com/dromara/ hertzbeat/pull/299) contributed by @Privauto
+5. [[common]feature:use "apache.http.conn.util" replace "sun.net.util" for upgrading java version #299](<https://github.com/dromara/> hertzbeat/pull/299) contributed by @Privauto
 6. [Update docker-deploy.md #304](https://github.com/apache/hertzbeat/pull/304) contributed by @emrys-he
 7. [fix(sec): upgrade snakeyaml to 1.31 #313](https://github.com/apache/hertzbeat/pull/313) contributed by @SxLiuYu
 8. [[script] add startup log and optimize port service judgment #321](https://github.com/apache/hertzbeat/pull/321)
 9. [[web-app] fix echarts y-axis value tip overflow #325](https://github.com/apache/hertzbeat/pull/325)
 10. [[webapp] fix interceptor http resp common error-msg when error #329](https://github.com/apache/hertzbeat/pull/329)
-    Online https://console.tancloud.cn.
+    Online <https://console.tancloud.cn>.
 
 Have Fun!
 
 ### Upgrade ⚠️
 
 Need Convert `application.yml`.
-```
-spring.
+
+```yaml
+spring:
   resources: static-locations.
     static-locations.
       - classpath:/dist/
       - classpath:... /dist/
-``` 
-To
-``
-spring.
-web.
-resources: static-locations.
-static-locations.
-- classpath:/dist/
-- classpath:... /dist/
 ```
 
-----
+To
+
+```yaml
+spring:
+  web:
+    resources: static-locations.
+      static-locations.
+        - classpath:/dist/
+        - classpath:... /dist/
+```

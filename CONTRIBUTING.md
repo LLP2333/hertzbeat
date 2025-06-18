@@ -30,20 +30,34 @@ Even small corrections to typos are very welcome :)
 > This is a front-end and back-end separation project. To start the local code, the back-end [manager](manager) and the front-end [web-app](web-app) must be started separately.  
 
 
-- Backend start   
+#### Backend start
 
-1. Requires `maven3+`, `java17` and `lombok` environments    
-2. (Optional) Modify the configuration file-`manager/src/main/resources/application.yml`
-3. Start `springboot manager` service `manager/src/main/java/org/apache/hertzbeat/manager/Manager.java`   
+1. Requires `maven3+`, `java17` and `lombok` environments
 
-- Front-web start   
+2. (Optional) Modify the configuration file: `manager/src/main/resources/application.yml`
 
-1. Need `nodejs npm angular-cli` environment, Make sure `Node.js >= 18`
-2. Install yarn: `npm install -g yarn`   
-3. Execute under the front-end project directory web-app: `yarn install`
-4. Install angular-cli globally: `yarn global add @angular/cli@15`
-5. After the local backend is started, start the local frontend in the web-app directory: `ng serve --open`
-6. Browser access to localhost:4200 to start   
+3. Execute under the project root directory: `mvn clean install -DskipTests`
+
+4. Add VM Options: `--add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED`
+
+5. Start `springboot manager` service: `manager/src/main/java/org/apache/hertzbeat/hertzbeat-manager/Manager.java`
+
+#### Frontend start
+
+1. Need `Node Yarn` Environment, Make sure `Node.js >= 18`
+
+2. Cd to the `web-app` directory: `cd web-app`
+
+3. Install yarn if not existed `npm install -g yarn`
+
+4. Install Dependencies: `yarn install` or `yarn install --registry=https://registry.npmmirror.com` in `web-app`
+
+5. Install angular-cli globally: `yarn global add @angular/cli@15` or `yarn global add @angular/cli@15 --registry=https://registry.npmmirror.com`
+
+6. After the local backend is started, start the local frontend in the web-app directory: `ng serve --open`
+
+7. Browser access to localhost:4200 to start, default account/password is *admin/hertzbeat*
+
 
 ### Find tasks   
 
@@ -56,23 +70,23 @@ Of course, if you have a good idea, you can also propose it directly on GitHub D
 
 1. First you need to fork your target [hertzbeat repository](https://github.com/apache/hertzbeat).   
 2. Then download the code locally with git command:
-```shell
-git clone git@github.com:${YOUR_USERNAME}/hertzbeat.git #Recommended  
-```
+    ```shell
+    git clone git@github.com:${YOUR_USERNAME}/hertzbeat.git #Recommended  
+    ```
 3. After the download is complete, please refer to the getting started guide or README file of the target repository to initialize the project.  
 4. Then, you can refer to the following command to submit the code:
-```shell
-git checkout -b a-feature-branch #Recommended  
-```
+    ```shell
+    git checkout -b a-feature-branch #Recommended  
+    ```
 5. Submit the coed as a commit, the commit message format specification required: [module name or type name]feature or bugfix or doc: custom message.  
-```shell
-git add <modified file/path> 
-git commit -m '[docs]feature: necessary instructions' #Recommended 
-```
+    ```shell
+    git add <modified file/path> 
+    git commit -m '[docs]feature: necessary instructions' #Recommended 
+    ```
 6. Push to the remote repository   
-```shell
-git push origin a-feature-branch   
-```
+    ```shell
+    git push origin a-feature-branch   
+    ```
 7. Then you can initiate a new PR (Pull Request) on GitHub.  
 
 Please note that the title of the PR needs to conform to our spec, and write the necessary description in the PR to facilitate code review by Committers and other contributors.   
@@ -104,6 +118,9 @@ git checkout master
 git pull upstream master
 ```
 
+### HertzBeat Improvement Proposal (HIP)
+If you have major new features(e.g., support metrics push gateway, support logs monitoring), you need to write a design document known as a HertzBeat Improvement Proposal (HIP). Before starting to write a HIP, make sure you follow the process [here](https://github.com/apache/hertzbeat/tree/master/hip).
+
 ### How to become a Committer?  
 
 With the above steps, you are a contributor to HertzBeat. Repeat the previous steps to stay active in the community, keep at, you can become a Committer!    
@@ -112,17 +129,17 @@ With the above steps, you are a contributor to HertzBeat. Repeat the previous st
 
 [Join the Mailing Lists](https://lists.apache.org/list.html?dev@hertzbeat.apache.org) : Mail to `dev-subscribe@hertzbeat.apache.org` to subscribe mailing lists.
 
-Add WeChat account `tan-cloud` to pull you into the WeChat group.
+Add WeChat account `ahertzbeat` to pull you into the WeChat group.
 
 ## 🥐 Architecture
 
-- **[manager](https://github.com/apache/hertzbeat/tree/master/manager)** Provide monitoring management, system management basic services.
+- **[manager](https://github.com/apache/hertzbeat/tree/master/hertzbeat-manager)** Provide monitoring management, system management basic services.
 > Provides monitoring management, monitoring configuration management, system user management, etc.
 - **[collector](https://github.com/apache/hertzbeat/tree/master/collector)** Provide metrics data collection services.
 > Use common protocols to remotely collect and obtain peer-to-peer metrics data.
 - **[warehouse](https://github.com/apache/hertzbeat/tree/master/warehouse)** Provide monitoring data warehousing services.
 > Metrics data management, data query, calculation and statistics.
-- **[alerter](https://github.com/apache/hertzbeat/tree/master/alerter)** Provide alert service.
+- **[alerter](https://github.com/apache/hertzbeat/tree/master/hertzbeat-alerter)** Provide alert service.
 > Alarm calculation trigger, monitoring status linkage, alarm configuration, and alarm notification.
 - **[web-app](https://github.com/apache/hertzbeat/tree/master/web-app)** Provide web ui.
 > Angular Web UI.
@@ -166,20 +183,34 @@ Add WeChat account `tan-cloud` to pull you into the WeChat group.
 > 让 HertzBeat 的代码在您的开发工具上运行起来，并且能够断点调试。   
 > 此为前后端分离项目，本地代码启动需将后端[manager](manager)和前端[web-app](web-app)分别启动生效。
 
-- 后端启动
+#### 后端启动
 
-1. 需要`maven3+`, `java17`和`lombok`环境  
+1. 需要 `maven3+`, `java17` 和 `lombok` 环境
+
 2. (可选)修改配置文件配置信息-`manager/src/main/resources/application.yml`
-3. 启动`springboot manager`服务 `manager/src/main/java/org/apache/hertzbeat/manager/Manager.java`  
 
-- 前端启动
+3. 在项目根目录运行编译: `mvn clean install -DskipTests`
 
-1. 需要`nodejs npm angular-cli`环境, 确保你的版本 `Node.js >= 18`
-2. 安装yarn `npm install -g yarn`
-3. 在前端工程目录web-app下执行 `yarn install`
-4. 全局安装angular-cli `yarn global add @angular/cli@15`
-5. 待本地后端启动后，在web-app目录下启动本地前端 `ng serve --open`
-6. 浏览器访问 localhost:4200 即可开始，默认账号密码 admin/hertzbeat
+4. 在 `jvm` 加入参数 `--add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED`
+
+5. 启动`springboot manager`服务 `manager/src/main/java/org/apache/hertzbeat/hertzbeat-manager/Manager.java`
+
+
+#### 前端启动
+
+1. 需要 `nodejs yarn` 环境, Make sure `Node.js >= 18`
+
+2. 进入 `web-app` 目录: `cd web-app`
+
+3. 安装yarn: `npm install -g yarn`
+
+4. 在前端工程目录 `web-app` 下执行: `yarn install` or `yarn install --registry=https://registry.npmmirror.com` in `web-app`
+
+5. 全局安装 `angular-cli`: `yarn global add @angular/cli@15` or `yarn global add @angular/cli@15 --registry=https://registry.npmmirror.com`
+
+6. 待本地后端启动后，在web-app目录下启动本地前端 `ng serve --open`
+
+7. 浏览器访问 localhost:4200 即可开始，默认账号密码 *admin/hertzbeat*
 
 ### 寻找任务  
 
@@ -192,23 +223,23 @@ Add WeChat account `tan-cloud` to pull you into the WeChat group.
 
 1. 首先您需要 Fork 目标仓库 [hertzbeat repository](https://github.com/apache/hertzbeat).
 2. 然后 用git命令 将代码下载到本地:  
-```shell
-git clone git@github.com:${YOUR_USERNAME}/hertzbeat.git #Recommended  
-```
+    ```shell
+    git clone git@github.com:${YOUR_USERNAME}/hertzbeat.git #Recommended  
+    ```
 3. 下载完成后，请参考目标仓库的入门指南或者 README 文件对项目进行初始化。
 4. 接着，您可以参考如下命令进行代码的提交, 切换新的分支, 进行开发:  
-```shell
-git checkout -b a-feature-branch #Recommended  
-```
+    ```shell
+    git checkout -b a-feature-branch #Recommended  
+    ```
 5. 提交 commit , commit 描述信息需要符合约定格式: [module name or type name]feature or bugfix or doc: custom message. 
-```shell
-git add <modified file/path> 
-git commit -m '[docs]feature: necessary instructions' #Recommended 
-```
+    ```shell
+    git add <modified file/path> 
+    git commit -m '[docs]feature: necessary instructions' #Recommended 
+    ```
 6. 推送到远程仓库   
-```shell
-git push origin a-feature-branch   
-```
+    ```shell
+    git push origin a-feature-branch   
+    ```
 7. 然后您就可以在 GitHub 上发起新的 PR (Pull Request)。
 
 请注意 PR 的标题需要符合我们的规范，并且在 PR 中写上必要的说明，来方便 Committer 和其他贡献者进行代码审查。 
@@ -240,6 +271,9 @@ git checkout master
 git pull upstream master
 ```
 
+### HertzBeat 改进提案 (HIP)
+如果您有重大的新特性（例如，支持指标推送网关，日志监控等），您需要编写一个被称为 HertzBeat 改进提案（HertzBeat Improvement Proposal，HIP）的设计文档。在开始编写 HIP 之前，请确保您遵循了[这里](https://github.com/apache/hertzbeat/tree/master/hip)的流程。
+
 ### 如何成为Committer？  
 
 通过上述步骤，您就是 HertzBeat 的贡献者了。重复前面的步骤，在社区中保持活跃，坚持下去，您就能成为 Committer！  
@@ -248,17 +282,17 @@ git pull upstream master
 
 [Join the Mailing Lists](https://lists.apache.org/list.html?dev@hertzbeat.apache.org) : Mail to `dev-subscribe@hertzbeat.apache.org` to subscribe mailing lists.
 
-Add WeChat account `tan-cloud` to pull you into the WeChat group.
+Add WeChat account `ahertzbeat` to pull you into the WeChat group.
 
 ### 模块
 
-- **[manager](https://github.com/apache/hertzbeat/tree/master/manager)** 提供监控管理,系统管理基础服务
+- **[manager](https://github.com/apache/hertzbeat/tree/master/hertzbeat-manager)** 提供监控管理,系统管理基础服务
 > 提供对监控的管理，监控应用配置的管理，系统用户租户后台管理等。
 - **[collector](https://github.com/apache/hertzbeat/tree/master/collector)** 提供监控数据采集服务
 > 使用通用协议远程采集获取对端指标数据。
 - **[warehouse](https://github.com/apache/hertzbeat/tree/master/warehouse)** 提供监控数据仓储服务
 > 采集指标结果数据管理，数据落盘，查询，计算统计。
-- **[alerter](https://github.com/apache/hertzbeat/tree/master/alerter)** 提供告警服务
+- **[alerter](https://github.com/apache/hertzbeat/tree/master/hertzbeat-alerter)** 提供告警服务
 > 告警计算触发，任务状态联动，告警配置，告警通知。
 - **[web-app](https://github.com/apache/hertzbeat/tree/master/web-app)** 提供可视化控制台页面
 > 监控告警系统可视化控制台前端

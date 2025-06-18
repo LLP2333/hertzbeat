@@ -146,5 +146,17 @@
   "item.label.Thanks": {
     "message": "Thanks",
     "description": "Navbar item with label Thanks"
+  },
+  "item.label.download": {
+    "message": "Download",
+    "description": "Navbar item with label download"
+  },
+  "item.label.contribution": {
+    "message": "Contribution Guide",
+    "description": "Navbar item with label contribution"
+  },
+  "item.label.development": {
+    "message": "Development",
+    "description": "Navbar item with label development"
   }
 }

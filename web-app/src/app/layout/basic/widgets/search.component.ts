@@ -10,8 +10,9 @@ import {
   OnDestroy,
   Output
 } from '@angular/core';
+import { Router, NavigationEnd } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
-import { debounceTime, distinctUntilChanged, tap } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, tap, filter } from 'rxjs/operators';
 
 import { Monitor } from '../../../pojo/Monitor';
 import { MonitorService } from '../../../service/monitor.service';
@@ -19,7 +20,7 @@ import { MonitorService } from '../../../service/monitor.service';
 @Component({
   selector: 'header-search',
   template: `
-    <nz-input-group [nzPrefix]="iconTpl" [nzSuffix]="loadingTpl">
+    <nz-input-group [nzPrefix]="iconTpl" [nzSuffix]="loadingTpl" class="search-input-group">
       <ng-template #iconTpl>
         <i nz-icon [nzType]="focus ? 'arrow-down' : 'search'"></i>
       </ng-template>
@@ -35,24 +36,33 @@ import { MonitorService } from '../../../service/monitor.service';
         (focus)="qFocus()"
         (blur)="qBlur()"
         [attr.placeholder]="'menu.search.placeholder' | i18n"
+        class="search-input"
       />
     </nz-input-group>
-    <nz-autocomplete nzBackfill="false" nzDefaultActiveFirstOption #auto>
+    <nz-autocomplete nzBackfill="false" nzDefaultActiveFirstOption #auto class="search-autocomplete">
       <nz-auto-option
         *ngFor="let option of options"
         [nzValue]="option.id"
         [nzLabel]="option.name"
-        [routerLink]="['/monitors/' + option.id]"
+        (click)="onOptionSelect(option)"
+        class="search-option"
       >
         <a>
-          {{ 'monitor.name' | i18n }} : {{ option.name }}
-          <span style="left:50% ; position: absolute;">{{ 'monitor.host' | i18n }} : {{ option.host }}</span>
-          <span style="right: 10px; position: absolute;"><i nz-icon nzType="arrow-right" nzTheme="outline"></i></span>
+          <div class="monitor-info">
+            <div>
+              <span class="monitor-name">{{ option.name }}</span>
+              <span class="monitor-host">{{ option.host }}</span>
+            </div>
+            <div class="monitor-labels">
+              <span *ngFor="let label of option.labels | keyvalue" class="monitor-label">{{ label.key + ' : ' + label.value }}</span>
+            </div>
+          </div>
         </a>
       </nz-auto-option>
     </nz-autocomplete>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  styleUrls: ['./search.component.less']
 })
 export class HeaderSearchComponent implements AfterViewInit, OnDestroy {
   q = '';
@@ -79,10 +89,23 @@ export class HeaderSearchComponent implements AfterViewInit, OnDestroy {
   }
   @Output() readonly toggleChangeChange = new EventEmitter<boolean>();
 
-  constructor(private el: ElementRef<HTMLElement>, private cdr: ChangeDetectorRef, private monitorSvc: MonitorService) {}
+  constructor(
+    private router: Router,
+    private el: ElementRef<HTMLElement>,
+    private cdr: ChangeDetectorRef,
+    private monitorSvc: MonitorService
+  ) {
+    this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(() => {
+      this.resetSearch();
+    });
+  }
 
   ngAfterViewInit(): void {
     this.qIpt = this.el.nativeElement.querySelector('.ant-input') as HTMLInputElement;
+    this.initOptions();
+  }
+
+  initOptions() {
     this.search$
       .pipe(
         debounceTime(500),
@@ -94,7 +117,7 @@ export class HeaderSearchComponent implements AfterViewInit, OnDestroy {
         })
       )
       .subscribe(value => {
-        // 远程加载搜索数据
+        // Remote loading of search data
         let searchMonitors$ = this.monitorSvc.searchMonitors(undefined, undefined, value, 9, 0, 10).subscribe(
           message => {
             this.loading = false;
@@ -133,6 +156,22 @@ export class HeaderSearchComponent implements AfterViewInit, OnDestroy {
 
   search(ev: Event): void {
     this.search$.next((ev.target as HTMLInputElement).value);
+  }
+
+  onOptionSelect(option: any) {
+    this.router.navigate([`/monitors/${option.id}`]);
+    this.resetSearch();
+    if (this.qIpt) {
+      this.qIpt.blur();
+    }
+    this.qBlur();
+  }
+
+  resetSearch() {
+    if (this.qIpt) {
+      this.qIpt!.value = '';
+    }
+    this.initOptions();
   }
 
   ngOnDestroy(): void {

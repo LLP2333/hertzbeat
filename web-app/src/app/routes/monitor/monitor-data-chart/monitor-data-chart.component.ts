@@ -17,11 +17,12 @@
  * under the License.
  */
 
-import { Component, Inject, Input, OnInit } from '@angular/core';
+import { Component, Inject, Input, OnInit, OnDestroy } from '@angular/core';
 import { I18NService } from '@core';
 import { ALAIN_I18N_TOKEN } from '@delon/theme';
 import { EChartsOption } from 'echarts';
 import { finalize } from 'rxjs/operators';
+import { getRandomGradientTriple } from 'src/app/shared/utils/common-util';
 
 import { MonitorService } from '../../../service/monitor.service';
 
@@ -30,7 +31,7 @@ import { MonitorService } from '../../../service/monitor.service';
   templateUrl: './monitor-data-chart.component.html',
   styles: []
 })
-export class MonitorDataChartComponent implements OnInit {
+export class MonitorDataChartComponent implements OnInit, OnDestroy {
   @Input()
   get monitorId(): number {
     return this._monitorId;
@@ -51,8 +52,9 @@ export class MonitorDataChartComponent implements OnInit {
   lineHistoryTheme!: EChartsOption;
   loading: boolean = true;
   echartsInstance!: any;
-  // 查询历史数据时间段 默认最近6小时
+  // Default historical data period is last 6 hours
   timePeriod: string = '6h';
+
   constructor(private monitorSvc: MonitorService, @Inject(ALAIN_I18N_TOKEN) private i18nSvc: I18NService) {}
 
   ngOnInit(): void {
@@ -74,20 +76,8 @@ export class MonitorDataChartComponent implements OnInit {
         show: true,
         orient: 'vertical',
         feature: {
-          dataZoom: {
-            yAxisIndex: 'none',
-            title: {
-              zoom: this.i18nSvc.fanyi('monitors.detail.chart.zoom'),
-              back: this.i18nSvc.fanyi('monitors.detail.chart.back')
-            },
-            emphasis: {
-              iconStyle: {
-                textPosition: 'left'
-              }
-            }
-          },
           saveAsImage: {
-            title: this.i18nSvc.fanyi('monitors.detail.chart.save'),
+            title: this.i18nSvc.fanyi('monitor.detail.chart.save'),
             emphasis: {
               iconStyle: {
                 textPosition: 'left'
@@ -96,7 +86,7 @@ export class MonitorDataChartComponent implements OnInit {
           },
           myPeriod1h: {
             show: true,
-            title: this.i18nSvc.fanyi('monitors.detail.chart.query-1h'),
+            title: this.i18nSvc.fanyi('monitor.detail.chart.query-1h'),
             icon: 'path://M827.871087 196.128913C743.498468 111.756293 631.321596 65.290005 512 65.290005c-119.319549 0-231.499491 46.465265-315.871087 130.837884S65.290005 392.680451 65.290005 512s46.465265 231.499491 130.837884 315.871087 196.551538 130.837884 315.871087 130.837884c119.321596 0 231.499491-46.465265 315.871087-130.837884S958.708971 631.319549 958.708971 512 912.243707 280.500509 827.871087 196.128913zM531.556405 917.246651l0-74.145697c0-11.31572-9.174963-20.491707-20.491707-20.491707-11.316743 0-20.491707 9.174963-20.491707 20.491707l0 74.059739C283.276738 906.322857 116.693746 739.164766 106.755396 531.634176l72.351841 0c11.31572 0 20.491707-9.174963 20.491707-20.491707 0-11.31572-9.174963-20.491707-20.491707-20.491707l-72.273047 0c10.769274-206.737528 177.01253-373.005342 383.740848-383.813502l0 72.346725c0 11.316743 9.174963 20.491707 20.491707 20.491707 11.31572 0 20.491707-9.17394 20.491707-20.491707L531.558451 106.752326c207.593012 9.901511 374.807385 176.539762 385.609405 383.89946l-74.142627 0c-11.316743 0-20.491707 9.174963-20.491707 20.491707 0 11.316743 9.174963 20.491707 20.491707 20.491707l74.220399 0C907.275555 739.78796 739.720422 907.317511 531.556405 917.246651z;M532.098757 503.118726 532.098757 258.240529c0-11.316743-9.174963-20.491707-20.491707-20.491707-11.31572 0-20.491707 9.17394-20.491707 20.491707l0 254.66612c0 7.858992 4.429893 14.677281 10.924817 18.114566L693.447539 722.42757c4.002151 4.000104 9.245572 6.001691 14.490016 6.001691s10.487865-2.001587 14.490016-6.001691c8.002254-8.002254 8.002254-20.977777 0-28.980032L532.098757 503.118726z',
             emphasis: {
               iconStyle: {
@@ -109,7 +99,7 @@ export class MonitorDataChartComponent implements OnInit {
           },
           myPeriod6h: {
             show: true,
-            title: this.i18nSvc.fanyi('monitors.detail.chart.query-6h'),
+            title: this.i18nSvc.fanyi('monitor.detail.chart.query-6h'),
             icon: 'path://M827.871087 196.128913C743.498468 111.756293 631.321596 65.290005 512 65.290005c-119.319549 0-231.499491 46.465265-315.871087 130.837884S65.290005 392.680451 65.290005 512s46.465265 231.499491 130.837884 315.871087 196.551538 130.837884 315.871087 130.837884c119.321596 0 231.499491-46.465265 315.871087-130.837884S958.708971 631.319549 958.708971 512 912.243707 280.500509 827.871087 196.128913zM531.556405 917.246651l0-74.145697c0-11.31572-9.174963-20.491707-20.491707-20.491707-11.316743 0-20.491707 9.174963-20.491707 20.491707l0 74.059739C283.276738 906.322857 116.693746 739.164766 106.755396 531.634176l72.351841 0c11.31572 0 20.491707-9.174963 20.491707-20.491707 0-11.31572-9.174963-20.491707-20.491707-20.491707l-72.273047 0c10.769274-206.737528 177.01253-373.005342 383.740848-383.813502l0 72.346725c0 11.316743 9.174963 20.491707 20.491707 20.491707 11.31572 0 20.491707-9.17394 20.491707-20.491707L531.558451 106.752326c207.593012 9.901511 374.807385 176.539762 385.609405 383.89946l-74.142627 0c-11.316743 0-20.491707 9.174963-20.491707 20.491707 0 11.316743 9.174963 20.491707 20.491707 20.491707l74.220399 0C907.275555 739.78796 739.720422 907.317511 531.556405 917.246651z;M532.098757 503.118726 532.098757 258.240529c0-11.316743-9.174963-20.491707-20.491707-20.491707-11.31572 0-20.491707 9.17394-20.491707 20.491707l0 254.66612c0 7.858992 4.429893 14.677281 10.924817 18.114566L693.447539 722.42757c4.002151 4.000104 9.245572 6.001691 14.490016 6.001691s10.487865-2.001587 14.490016-6.001691c8.002254-8.002254 8.002254-20.977777 0-28.980032L532.098757 503.118726z',
             emphasis: {
               iconStyle: {
@@ -122,7 +112,7 @@ export class MonitorDataChartComponent implements OnInit {
           },
           myPeriod1d: {
             show: true,
-            title: this.i18nSvc.fanyi('monitors.detail.chart.query-1d'),
+            title: this.i18nSvc.fanyi('monitor.detail.chart.query-1d'),
             icon: 'path://M827.871087 196.128913C743.498468 111.756293 631.321596 65.290005 512 65.290005c-119.319549 0-231.499491 46.465265-315.871087 130.837884S65.290005 392.680451 65.290005 512s46.465265 231.499491 130.837884 315.871087 196.551538 130.837884 315.871087 130.837884c119.321596 0 231.499491-46.465265 315.871087-130.837884S958.708971 631.319549 958.708971 512 912.243707 280.500509 827.871087 196.128913zM531.556405 917.246651l0-74.145697c0-11.31572-9.174963-20.491707-20.491707-20.491707-11.316743 0-20.491707 9.174963-20.491707 20.491707l0 74.059739C283.276738 906.322857 116.693746 739.164766 106.755396 531.634176l72.351841 0c11.31572 0 20.491707-9.174963 20.491707-20.491707 0-11.31572-9.174963-20.491707-20.491707-20.491707l-72.273047 0c10.769274-206.737528 177.01253-373.005342 383.740848-383.813502l0 72.346725c0 11.316743 9.174963 20.491707 20.491707 20.491707 11.31572 0 20.491707-9.17394 20.491707-20.491707L531.558451 106.752326c207.593012 9.901511 374.807385 176.539762 385.609405 383.89946l-74.142627 0c-11.316743 0-20.491707 9.174963-20.491707 20.491707 0 11.316743 9.174963 20.491707 20.491707 20.491707l74.220399 0C907.275555 739.78796 739.720422 907.317511 531.556405 917.246651z;M532.098757 503.118726 532.098757 258.240529c0-11.316743-9.174963-20.491707-20.491707-20.491707-11.31572 0-20.491707 9.17394-20.491707 20.491707l0 254.66612c0 7.858992 4.429893 14.677281 10.924817 18.114566L693.447539 722.42757c4.002151 4.000104 9.245572 6.001691 14.490016 6.001691s10.487865-2.001587 14.490016-6.001691c8.002254-8.002254 8.002254-20.977777 0-28.980032L532.098757 503.118726z',
             emphasis: {
               iconStyle: {
@@ -135,7 +125,7 @@ export class MonitorDataChartComponent implements OnInit {
           },
           myPeriod1w: {
             show: true,
-            title: this.i18nSvc.fanyi('monitors.detail.chart.query-1w'),
+            title: this.i18nSvc.fanyi('monitor.detail.chart.query-1w'),
             icon: 'path://M827.871087 196.128913C743.498468 111.756293 631.321596 65.290005 512 65.290005c-119.319549 0-231.499491 46.465265-315.871087 130.837884S65.290005 392.680451 65.290005 512s46.465265 231.499491 130.837884 315.871087 196.551538 130.837884 315.871087 130.837884c119.321596 0 231.499491-46.465265 315.871087-130.837884S958.708971 631.319549 958.708971 512 912.243707 280.500509 827.871087 196.128913zM531.556405 917.246651l0-74.145697c0-11.31572-9.174963-20.491707-20.491707-20.491707-11.316743 0-20.491707 9.174963-20.491707 20.491707l0 74.059739C283.276738 906.322857 116.693746 739.164766 106.755396 531.634176l72.351841 0c11.31572 0 20.491707-9.174963 20.491707-20.491707 0-11.31572-9.174963-20.491707-20.491707-20.491707l-72.273047 0c10.769274-206.737528 177.01253-373.005342 383.740848-383.813502l0 72.346725c0 11.316743 9.174963 20.491707 20.491707 20.491707 11.31572 0 20.491707-9.17394 20.491707-20.491707L531.558451 106.752326c207.593012 9.901511 374.807385 176.539762 385.609405 383.89946l-74.142627 0c-11.316743 0-20.491707 9.174963-20.491707 20.491707 0 11.316743 9.174963 20.491707 20.491707 20.491707l74.220399 0C907.275555 739.78796 739.720422 907.317511 531.556405 917.246651z;M532.098757 503.118726 532.098757 258.240529c0-11.316743-9.174963-20.491707-20.491707-20.491707-11.31572 0-20.491707 9.17394-20.491707 20.491707l0 254.66612c0 7.858992 4.429893 14.677281 10.924817 18.114566L693.447539 722.42757c4.002151 4.000104 9.245572 6.001691 14.490016 6.001691s10.487865-2.001587 14.490016-6.001691c8.002254-8.002254 8.002254-20.977777 0-28.980032L532.098757 503.118726z',
             emphasis: {
               iconStyle: {
@@ -148,7 +138,7 @@ export class MonitorDataChartComponent implements OnInit {
           },
           myPeriod4w: {
             show: true,
-            title: this.i18nSvc.fanyi('monitors.detail.chart.query-1m'),
+            title: this.i18nSvc.fanyi('monitor.detail.chart.query-1m'),
             icon: 'path://M827.871087 196.128913C743.498468 111.756293 631.321596 65.290005 512 65.290005c-119.319549 0-231.499491 46.465265-315.871087 130.837884S65.290005 392.680451 65.290005 512s46.465265 231.499491 130.837884 315.871087 196.551538 130.837884 315.871087 130.837884c119.321596 0 231.499491-46.465265 315.871087-130.837884S958.708971 631.319549 958.708971 512 912.243707 280.500509 827.871087 196.128913zM531.556405 917.246651l0-74.145697c0-11.31572-9.174963-20.491707-20.491707-20.491707-11.316743 0-20.491707 9.174963-20.491707 20.491707l0 74.059739C283.276738 906.322857 116.693746 739.164766 106.755396 531.634176l72.351841 0c11.31572 0 20.491707-9.174963 20.491707-20.491707 0-11.31572-9.174963-20.491707-20.491707-20.491707l-72.273047 0c10.769274-206.737528 177.01253-373.005342 383.740848-383.813502l0 72.346725c0 11.316743 9.174963 20.491707 20.491707 20.491707 11.31572 0 20.491707-9.17394 20.491707-20.491707L531.558451 106.752326c207.593012 9.901511 374.807385 176.539762 385.609405 383.89946l-74.142627 0c-11.316743 0-20.491707 9.174963-20.491707 20.491707 0 11.316743 9.174963 20.491707 20.491707 20.491707l74.220399 0C907.275555 739.78796 739.720422 907.317511 531.556405 917.246651z;M532.098757 503.118726 532.098757 258.240529c0-11.316743-9.174963-20.491707-20.491707-20.491707-11.31572 0-20.491707 9.17394-20.491707 20.491707l0 254.66612c0 7.858992 4.429893 14.677281 10.924817 18.114566L693.447539 722.42757c4.002151 4.000104 9.245572 6.001691 14.490016 6.001691s10.487865-2.001587 14.490016-6.001691c8.002254-8.002254 8.002254-20.977777 0-28.980032L532.098757 503.118726z',
             emphasis: {
               iconStyle: {
@@ -161,7 +151,7 @@ export class MonitorDataChartComponent implements OnInit {
           },
           myPeriod3m: {
             show: true,
-            title: this.i18nSvc.fanyi('monitors.detail.chart.query-3m'),
+            title: this.i18nSvc.fanyi('monitor.detail.chart.query-3m'),
             icon: 'path://M827.871087 196.128913C743.498468 111.756293 631.321596 65.290005 512 65.290005c-119.319549 0-231.499491 46.465265-315.871087 130.837884S65.290005 392.680451 65.290005 512s46.465265 231.499491 130.837884 315.871087 196.551538 130.837884 315.871087 130.837884c119.321596 0 231.499491-46.465265 315.871087-130.837884S958.708971 631.319549 958.708971 512 912.243707 280.500509 827.871087 196.128913zM531.556405 917.246651l0-74.145697c0-11.31572-9.174963-20.491707-20.491707-20.491707-11.316743 0-20.491707 9.174963-20.491707 20.491707l0 74.059739C283.276738 906.322857 116.693746 739.164766 106.755396 531.634176l72.351841 0c11.31572 0 20.491707-9.174963 20.491707-20.491707 0-11.31572-9.174963-20.491707-20.491707-20.491707l-72.273047 0c10.769274-206.737528 177.01253-373.005342 383.740848-383.813502l0 72.346725c0 11.316743 9.174963 20.491707 20.491707 20.491707 11.31572 0 20.491707-9.17394 20.491707-20.491707L531.558451 106.752326c207.593012 9.901511 374.807385 176.539762 385.609405 383.89946l-74.142627 0c-11.316743 0-20.491707 9.174963-20.491707 20.491707 0 11.316743 9.174963 20.491707 20.491707 20.491707l74.220399 0C907.275555 739.78796 739.720422 907.317511 531.556405 917.246651z;M532.098757 503.118726 532.098757 258.240529c0-11.316743-9.174963-20.491707-20.491707-20.491707-11.31572 0-20.491707 9.17394-20.491707 20.491707l0 254.66612c0 7.858992 4.429893 14.677281 10.924817 18.114566L693.447539 722.42757c4.002151 4.000104 9.245572 6.001691 14.490016 6.001691s10.487865-2.001587 14.490016-6.001691c8.002254-8.002254 8.002254-20.977777 0-28.980032L532.098757 503.118726z',
             emphasis: {
               iconStyle: {
@@ -212,11 +202,26 @@ export class MonitorDataChartComponent implements OnInit {
         splitLine: {
           show: true
         }
-      }
+      },
+      dataZoom: [
+        {
+          type: 'slider',
+          start: 0,
+          end: 100
+        },
+        {
+          type: 'inside',
+          start: 0,
+          end: 100,
+          zoomOnMouseWheel: false,
+          moveOnMouseMove: false,
+          moveOnMouseWheel: false
+        }
+      ]
     };
     if (this.unit != undefined || this.unit != null) {
       // @ts-ignore
-      this.lineHistoryTheme.title.subtext = `${this.i18nSvc.fanyi('monitors.detail.chart.unit')}  ${this.unit}`;
+      this.lineHistoryTheme.title.subtext = `${this.i18nSvc.fanyi('monitor.detail.chart.unit')}  ${this.unit}`;
     }
     this.loadData();
   }
@@ -228,7 +233,7 @@ export class MonitorDataChartComponent implements OnInit {
     if (isInterval == undefined) {
       isInterval = false;
     }
-    // 读取指标历史数据
+    // load historical metrics data
     this.loading = true;
     let metricData$ = this.monitorSvc
       .getMonitorMetricHistoryData(this.monitorId, this.app, this.metrics, this.metric, this.timePeriod, isInterval)
@@ -260,6 +265,7 @@ export class MonitorDataChartComponent implements OnInit {
                 };
               }
               this.lineHistoryTheme.series = [];
+              const usedColors = new Set<string>();
               let valueKeyArr = Object.keys(values);
               for (let index = 0; index < valueKeyArr.length; index++) {
                 let key = valueKeyArr[index];
@@ -269,15 +275,62 @@ export class MonitorDataChartComponent implements OnInit {
                     value: [item.time, item.origin]
                   });
                 });
+
+                // Define line color based on number of series
+                let lineStyle: any;
+                if (valueKeyArr.length === 1) {
+                  // Single line - use gradient color
+                  lineStyle = {
+                    color: {
+                      type: 'linear',
+                      x: 0,
+                      y: 0,
+                      x2: 1,
+                      y2: 0,
+                      colorStops: [
+                        // start color, middle color, end color
+                        { offset: 0, color: 'rgba(86, 204, 242, 0.8)' },
+                        { offset: 0.5, color: 'rgba(47, 128, 237, 0.6)' },
+                        { offset: 1, color: 'rgba(26, 86, 184, 0.4)' }
+                      ]
+                    }
+                  };
+                } else {
+                  // Multiple lines - use random gradient
+                  let gradientColors: [string, string, string];
+                  do {
+                    gradientColors = getRandomGradientTriple();
+                  } while (usedColors.has(gradientColors[0]));
+                  usedColors.add(gradientColors[0]);
+
+                  lineStyle = {
+                    color: {
+                      type: 'linear',
+                      x: 0,
+                      y: 0,
+                      x2: 1,
+                      y2: 0,
+                      colorStops: [
+                        { offset: 0, color: gradientColors[0] },
+                        { offset: 0.5, color: gradientColors[1] },
+                        { offset: 1, color: gradientColors[2] }
+                      ]
+                    }
+                  };
+                }
+
                 this.lineHistoryTheme.series.push({
                   name: key,
                   type: 'line',
-                  stack: 'Total',
                   smooth: true,
                   showSymbol: false,
-                  areaStyle: {},
                   emphasis: {
                     focus: 'series'
+                  },
+                  lineStyle: lineStyle,
+                  // Add itemStyle to match the line color in the legend
+                  itemStyle: {
+                    color: valueKeyArr.length === 1 ? '#2F80ED' : lineStyle.color.colorStops[0].color
                   },
                   data: seriesData
                 });
@@ -313,8 +366,6 @@ export class MonitorDataChartComponent implements OnInit {
                 type: 'line',
                 smooth: true,
                 showSymbol: false,
-                stack: 'Total',
-                areaStyle: {},
                 emphasis: {
                   focus: 'series'
                 },
@@ -325,8 +376,6 @@ export class MonitorDataChartComponent implements OnInit {
                 type: 'line',
                 smooth: true,
                 showSymbol: false,
-                stack: 'Total',
-                areaStyle: {},
                 emphasis: {
                   focus: 'series'
                 },
@@ -337,8 +386,6 @@ export class MonitorDataChartComponent implements OnInit {
                 type: 'line',
                 smooth: true,
                 showSymbol: false,
-                stack: 'Total',
-                areaStyle: {},
                 emphasis: {
                   focus: 'series'
                 },
@@ -354,7 +401,7 @@ export class MonitorDataChartComponent implements OnInit {
           } else {
             this.eChartOption = this.lineHistoryTheme;
             this.eChartOption.title = {
-              text: `${`${this.metrics}.${this.metric}` + '\n\n\n'}${this.i18nSvc.fanyi('monitors.detail.chart.no-data')}`,
+              text: `${`${this.metrics}.${this.metric}` + '\n\n\n'}${this.i18nSvc.fanyi('monitor.detail.chart.no-data')}`,
               textStyle: {
                 fontSize: 16,
                 fontFamily: 'monospace',
@@ -378,5 +425,13 @@ export class MonitorDataChartComponent implements OnInit {
 
   onChartInit(ec: any) {
     this.echartsInstance = ec;
+  }
+
+  ngOnDestroy(): void {
+    // Dispose of the chart instance when component is destroyed
+    if (this.echartsInstance) {
+      this.echartsInstance.dispose();
+      this.echartsInstance = null;
+    }
   }
 }

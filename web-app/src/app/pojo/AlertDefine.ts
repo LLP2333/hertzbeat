@@ -17,25 +17,25 @@
  * under the License.
  */
 
-import { TagItem } from './NoticeRule';
-
 export class AlertDefine {
   id!: number;
-  app!: string;
-  // when metrics is availability (monitoring avail default), field is undefined
-  metric!: string;
-  field!: string;
-  preset: boolean = true;
+  name!: string;
+  // realtime, periodic
+  type: string = 'realtime';
+  // datasource when type is periodic, promql | sql
+  datasource: string = 'promql';
   expr!: string;
-  // 告警级别 0:高-emergency-紧急告警-红色 1:中-critical-严重告警-橙色 2:低-warning-警告告警-黄色
-  priority: number = 2;
+  // unit second
+  period: number = 300;
   times: number = 3;
-  tags!: TagItem[];
+  // severity: info, warning, critical, emergency, fatal
+  labels!: Record<string, string>;
+  annotations!: Record<string, string>;
   enable: boolean = true;
-  recoverNotice: boolean = false;
   template!: string;
   creator!: string;
   modifier!: string;
   gmtCreate!: number;
   gmtUpdate!: number;
+  priority: number = 2;
 }

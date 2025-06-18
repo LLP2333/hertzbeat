@@ -17,24 +17,25 @@
  * under the License.
  */
 
-import { ChangeDetectorRef, Component, Inject, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { Component, Inject, OnInit } from '@angular/core';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { I18NService } from '@core';
 import { ALAIN_I18N_TOKEN, TitleService } from '@delon/theme';
 import { NzNotificationService } from 'ng-zorro-antd/notification';
-import { switchMap } from 'rxjs/operators';
+import { of } from 'rxjs';
+import { finalize, switchMap } from 'rxjs/operators';
 
 import { Collector } from '../../../pojo/Collector';
+import { GrafanaDashboard } from '../../../pojo/GrafanaDashboard';
 import { Message } from '../../../pojo/Message';
 import { Monitor } from '../../../pojo/Monitor';
 import { Param } from '../../../pojo/Param';
 import { ParamDefine } from '../../../pojo/ParamDefine';
-import { Tag } from '../../../pojo/Tag';
 import { AppDefineService } from '../../../service/app-define.service';
 import { CollectorService } from '../../../service/collector.service';
+import { LabelService } from '../../../service/label.service';
 import { MonitorService } from '../../../service/monitor.service';
-import { TagService } from '../../../service/tag.service';
+import { generateReadableRandomString } from '../../../shared/utils/common-util';
 
 @Component({
   selector: 'app-monitor-add',
@@ -42,6 +43,8 @@ import { TagService } from '../../../service/tag.service';
   styles: []
 })
 export class MonitorNewComponent implements OnInit {
+  sdDefines: ParamDefine[] = [];
+  sdParams: Param[] = [];
   paramDefines!: ParamDefine[];
   hostName!: string;
   params!: Param[];
@@ -50,26 +53,25 @@ export class MonitorNewComponent implements OnInit {
   monitor!: Monitor;
   collectors!: Collector[];
   collector: string = '';
-  detected: boolean = false;
-  passwordVisible: boolean = false;
-  // 是否显示加载中
+  grafanaDashboard!: GrafanaDashboard;
+  // whether it is loading
   isSpinning: boolean = false;
   spinningTip: string = 'Loading...';
+  labelKeys: string[] = [];
+  labelMap: { [key: string]: string[] } = {};
   constructor(
     private appDefineSvc: AppDefineService,
     private monitorSvc: MonitorService,
     private route: ActivatedRoute,
     private router: Router,
     private notifySvc: NzNotificationService,
-    private cdr: ChangeDetectorRef,
     @Inject(ALAIN_I18N_TOKEN) private i18nSvc: I18NService,
     private titleSvc: TitleService,
-    private tagSvc: TagService,
     private collectorSvc: CollectorService,
-    private formBuilder: FormBuilder
+    private labelSvc: LabelService
   ) {
     this.monitor = new Monitor();
-    this.monitor.tags = [];
+    this.grafanaDashboard = new GrafanaDashboard();
   }
 
   ngOnInit(): void {
@@ -80,9 +82,8 @@ export class MonitorNewComponent implements OnInit {
           if (this.monitor.app == '') {
             this.router.navigateByUrl('/monitors/new?app=website');
           }
+          this.monitor.scrape = paramMap.get('scrape') || 'static';
           this.titleSvc.setTitleByI18n(`monitor.app.${this.monitor.app}`);
-          this.detected = false;
-          this.passwordVisible = false;
           this.isSpinning = true;
           return this.appDefineSvc.getAppParamsDefine(this.monitor.app);
         })
@@ -90,10 +91,10 @@ export class MonitorNewComponent implements OnInit {
       .pipe(
         switchMap((message: Message<ParamDefine[]>) => {
           if (message.code === 0) {
-            this.params = [];
-            this.advancedParams = [];
-            this.paramDefines = [];
-            this.advancedParamDefines = [];
+            let params: Param[] = [];
+            let advancedParams: Param[] = [];
+            let paramDefines: ParamDefine[] = [];
+            let advancedParamDefines: ParamDefine[] = [];
             message.data.forEach(define => {
               let param = new Param();
               param.field = define.field;
@@ -119,12 +120,15 @@ export class MonitorNewComponent implements OnInit {
                 }
               }
               define.name = this.i18nSvc.fanyi(`monitor.app.${this.monitor.app}.param.${define.field}`);
+              if (define.placeholder == null && this.i18nSvc.fanyi(`monitor.${define.field}.tip`) != `monitor.${define.field}.tip`) {
+                define.placeholder = this.i18nSvc.fanyi(`monitor.${define.field}.tip`);
+              }
               if (define.hide) {
-                this.advancedParams.push(param);
-                this.advancedParamDefines.push(define);
+                advancedParams.push(param);
+                advancedParamDefines.push(define);
               } else {
-                this.params.push(param);
-                this.paramDefines.push(define);
+                params.push(param);
+                paramDefines.push(define);
               }
               if (
                 define.field == 'host' &&
@@ -134,243 +138,229 @@ export class MonitorNewComponent implements OnInit {
                 this.hostName = define.name;
               }
             });
+            this.params = [...params];
+            this.advancedParams = [...advancedParams];
+            this.paramDefines = [...paramDefines];
+            this.advancedParamDefines = [...advancedParamDefines];
           } else {
             console.warn(message.msg);
           }
           return this.collectorSvc.getCollectors();
         })
       )
+      .pipe(
+        switchMap((message: any) => {
+          if (message.code === 0) {
+            this.collectors = message.data.content?.map((item: { collector: any }) => item.collector);
+          } else {
+            console.warn(message.msg);
+          }
+          if (this.monitor.scrape == 'static') {
+            return of({ code: 0, data: [], msg: '' });
+          } else {
+            return this.appDefineSvc.getAppParamsDefine(this.monitor.scrape);
+          }
+        })
+      )
       .subscribe(
         message => {
           if (message.code === 0) {
-            this.collectors = message.data.content?.map(item => item.collector);
+            if (message.data.length > 0) {
+              let params: Param[] = [];
+              let paramDefines: ParamDefine[] = [];
+              message.data.forEach(define => {
+                let param = new Param();
+                param.field = define.field;
+                if (define.type === 'number') {
+                  param.type = 0;
+                } else if (define.type === 'key-value') {
+                  param.type = 3;
+                } else if (define.type === 'array') {
+                  param.type = 4;
+                } else {
+                  param.type = 1;
+                }
+                if (define.type === 'boolean') {
+                  param.paramValue = false;
+                }
+                if (define.defaultValue != undefined) {
+                  if (define.type === 'number') {
+                    param.paramValue = Number(define.defaultValue);
+                  } else if (define.type === 'boolean') {
+                    param.paramValue = define.defaultValue.toLowerCase() == 'true';
+                  } else {
+                    param.paramValue = define.defaultValue;
+                  }
+                }
+                define.name = this.i18nSvc.fanyi(`monitor.app.${this.monitor.scrape}.param.${define.field}`);
+                if (define.placeholder == null && this.i18nSvc.fanyi(`monitor.${define.field}.tip`) != `monitor.${define.field}.tip`) {
+                  define.placeholder = this.i18nSvc.fanyi(`monitor.${define.field}.tip`);
+                }
+                if (define.hide) {
+                  param.display = false;
+                }
+                params.push(param);
+                paramDefines.push(define);
+              });
+              this.sdParams = [...params];
+              this.sdDefines = [...paramDefines];
+            }
           } else {
             console.warn(message.msg);
           }
           this.isSpinning = false;
         },
         error => {
-          this.isSpinning = true;
+          this.isSpinning = false;
         }
       );
+    this.loadLabels();
+  }
+
+  onScrapeChange(scrapeValue: string) {
+    this.monitor.scrape = scrapeValue;
+    if (this.monitor.scrape !== 'static') {
+      this.isSpinning = true;
+      let queryScrapeDefine$ = this.appDefineSvc
+        .getAppParamsDefine(this.monitor.scrape)
+        .pipe(
+          finalize(() => {
+            queryScrapeDefine$.unsubscribe();
+            this.isSpinning = false;
+          })
+        )
+        .subscribe(message => {
+          if (message.code === 0) {
+            let params: Param[] = [];
+            let paramDefines: ParamDefine[] = [];
+            message.data.forEach(define => {
+              let param = new Param();
+              param.field = define.field;
+              if (define.type === 'number') {
+                param.type = 0;
+              } else if (define.type === 'key-value') {
+                param.type = 3;
+              } else if (define.type === 'array') {
+                param.type = 4;
+              } else {
+                param.type = 1;
+              }
+              if (define.type === 'boolean') {
+                param.paramValue = false;
+              }
+              if (define.defaultValue != undefined) {
+                if (define.type === 'number') {
+                  param.paramValue = Number(define.defaultValue);
+                } else if (define.type === 'boolean') {
+                  param.paramValue = define.defaultValue.toLowerCase() == 'true';
+                } else {
+                  param.paramValue = define.defaultValue;
+                }
+              }
+              define.name = this.i18nSvc.fanyi(`monitor.app.${this.monitor.scrape}.param.${define.field}`);
+              if (define.placeholder == null && this.i18nSvc.fanyi(`monitor.${define.field}.tip`) != `monitor.${define.field}.tip`) {
+                define.placeholder = this.i18nSvc.fanyi(`monitor.${define.field}.tip`);
+              }
+              if (define.hide) {
+                param.display = false;
+              }
+              params.push(param);
+              paramDefines.push(define);
+            });
+            this.sdParams = [...params];
+            this.sdDefines = [...paramDefines];
+          }
+        });
+    }
   }
 
   onHostChange(hostValue: string) {
-    if (this.monitor.app != 'prometheus') {
-      let autoName = `${this.monitor.app.toUpperCase()}_${hostValue}`;
-      if (this.monitor.name == undefined || this.monitor.name == '' || this.monitor.name.startsWith(this.monitor.app.toUpperCase())) {
-        this.monitor.name = autoName;
-      }
+    if (this.monitor.name == undefined || this.monitor.name == '') {
+      this.monitor.name = generateReadableRandomString();
     }
   }
 
-  onParamBooleanChanged(booleanValue: boolean, field: string) {
-    // 对SSL的端口联动处理, 不开启SSL默认80端口，开启SSL默认443
-    if (field === 'ssl') {
-      this.params.forEach(param => {
-        if (param.field === 'port') {
-          if (booleanValue) {
-            param.paramValue = '443';
-          } else {
-            param.paramValue = '80';
-          }
-        }
-      });
-    }
-  }
-
-  onSubmit(formGroup: FormGroup) {
-    if (formGroup.invalid) {
-      Object.values(formGroup.controls).forEach(control => {
-        if (control.invalid) {
-          control.markAsDirty();
-          control.updateValueAndValidity({ onlySelf: true });
-        }
-      });
-      return;
-    }
-    this.monitor.host = this.monitor.host.trim();
-    this.monitor.name = this.monitor.name.trim();
-    // todo 暂时单独设置host属性值
-    this.params.forEach(param => {
-      if (param.field === 'host') {
-        param.paramValue = this.monitor.host;
-      }
-      if (param.paramValue != null && typeof param.paramValue == 'string') {
-        param.paramValue = (param.paramValue as string).trim();
-      }
-    });
-    this.advancedParams.forEach(param => {
-      if (param.paramValue != null && typeof param.paramValue == 'string') {
-        param.paramValue = (param.paramValue as string).trim();
-      }
-    });
+  onSubmit(info: any) {
     let addMonitor = {
-      detected: this.detected,
-      collector: this.collector,
-      monitor: this.monitor,
-      params: this.params.concat(this.advancedParams)
+      monitor: info.monitor,
+      collector: info.collector,
+      params: info.params.concat(info.advancedParams).concat(info.sdParams),
+      grafanaDashboard: info.grafanaDashboard
     };
-    if (this.detected) {
-      this.spinningTip = this.i18nSvc.fanyi('monitors.spinning-tip.detecting');
-    } else {
-      this.spinningTip = 'Loading...';
-    }
+    this.spinningTip = 'Loading...';
     this.isSpinning = true;
     this.monitorSvc.newMonitor(addMonitor).subscribe(
       message => {
         this.isSpinning = false;
         if (message.code === 0) {
-          this.notifySvc.success(this.i18nSvc.fanyi('monitors.new.success'), '');
-          this.router.navigateByUrl(`/monitors?app=${this.monitor.app}`);
+          this.notifySvc.success(this.i18nSvc.fanyi('monitor.new.success'), '');
+          this.router.navigateByUrl(`/monitors?app=${info.monitor.app}`);
         } else {
-          this.notifySvc.error(this.i18nSvc.fanyi('monitors.new.failed'), message.msg);
+          this.notifySvc.error(this.i18nSvc.fanyi('monitor.new.failed'), message.msg);
         }
       },
       error => {
         this.isSpinning = false;
-        this.notifySvc.error(this.i18nSvc.fanyi('monitors.new.failed'), error.msg);
+        this.notifySvc.error(this.i18nSvc.fanyi('monitor.new.failed'), error.msg);
       }
     );
   }
 
-  onDetect(formGroup: FormGroup) {
-    if (formGroup.invalid) {
-      Object.values(formGroup.controls).forEach(control => {
-        if (control.invalid) {
-          control.markAsDirty();
-          control.updateValueAndValidity({ onlySelf: true });
-        }
-      });
-      return;
-    }
-    this.monitor.host = this.monitor.host.trim();
-    this.monitor.name = this.monitor.name.trim();
-    // todo 暂时单独设置host属性值
-    this.params.forEach(param => {
-      if (param.field === 'host') {
-        param.paramValue = this.monitor.host;
-      }
-      if (param.paramValue != null && typeof param.paramValue == 'string') {
-        param.paramValue = (param.paramValue as string).trim();
-      }
-    });
-    this.advancedParams.forEach(param => {
-      if (param.paramValue != null && typeof param.paramValue == 'string') {
-        param.paramValue = (param.paramValue as string).trim();
-      }
-    });
+  onDetect(info: any) {
     let detectMonitor = {
-      detected: true,
-      collector: this.collector,
-      monitor: this.monitor,
-      params: this.params.concat(this.advancedParams)
+      monitor: info.monitor,
+      collector: info.collector,
+      params: info.params.concat(info.advancedParams).concat(info.sdParams)
     };
-    this.spinningTip = this.i18nSvc.fanyi('monitors.spinning-tip.detecting');
+    this.spinningTip = this.i18nSvc.fanyi('monitor.spinning-tip.detecting');
     this.isSpinning = true;
     this.monitorSvc.detectMonitor(detectMonitor).subscribe(
       message => {
         this.isSpinning = false;
         if (message.code === 0) {
-          this.notifySvc.success(this.i18nSvc.fanyi('monitors.detect.success'), '');
+          this.notifySvc.success(this.i18nSvc.fanyi('monitor.detect.success'), '');
         } else {
-          this.notifySvc.error(this.i18nSvc.fanyi('monitors.detect.failed'), message.msg);
+          this.notifySvc.error(this.i18nSvc.fanyi('monitor.detect.failed'), message.msg);
         }
       },
       error => {
         this.isSpinning = false;
-        this.notifySvc.error(this.i18nSvc.fanyi('monitors.detect.failed'), error.msg);
+        this.notifySvc.error(this.i18nSvc.fanyi('monitor.detect.failed'), error.msg);
       }
     );
   }
 
   onCancel() {
-    let app = this.monitor.app;
-    app = app ? app : '';
-    this.router.navigateByUrl(`/monitors?app=${app}`);
+    this.router.navigateByUrl(`/monitors`);
   }
 
-  onRemoveTag(tag: Tag) {
-    if (this.monitor != undefined && this.monitor.tags != undefined) {
-      this.monitor.tags = this.monitor.tags.filter(item => item !== tag);
-    }
-  }
-
-  sliceTagName(tag: Tag): string {
-    if (tag.tagValue != undefined && tag.tagValue.trim() != '') {
-      return `${tag.name}:${tag.tagValue}`;
-    } else {
-      return tag.name;
-    }
-  }
-
-  // start Tag model
-  isManageModalVisible = false;
-  isManageModalOkLoading = false;
-  tagCheckedAll: boolean = false;
-  tagTableLoading = false;
-  tagSearch!: string;
-  tags!: Tag[];
-  checkedTags = new Set<Tag>();
-  loadTagsTable() {
-    this.tagTableLoading = true;
-    let tagsReq$ = this.tagSvc.loadTags(this.tagSearch, 1, 0, 1000).subscribe(
+  loadLabels() {
+    let labelsInit$ = this.labelSvc.loadLabels(undefined, undefined, 0, 9999).subscribe(
       message => {
-        this.tagTableLoading = false;
-        this.tagCheckedAll = false;
-        this.checkedTags.clear();
         if (message.code === 0) {
           let page = message.data;
-          this.tags = page.content;
+          this.labelKeys = [...new Set(page.content.map(label => label.name))];
+
+          this.labelMap = {};
+
+          page.content.forEach(label => {
+            if (!this.labelMap[label.name]) {
+              this.labelMap[label.name] = [];
+            }
+
+            if (label.tagValue && !this.labelMap[label.name].includes(label.tagValue)) {
+              this.labelMap[label.name].push(label.tagValue);
+            }
+          });
         } else {
           console.warn(message.msg);
         }
-        tagsReq$.unsubscribe();
+        labelsInit$.unsubscribe();
       },
       error => {
-        this.tagTableLoading = false;
-        tagsReq$.unsubscribe();
+        labelsInit$.unsubscribe();
+        console.error(error.msg);
       }
     );
   }
-  onShowTagsModal() {
-    this.isManageModalVisible = true;
-    this.loadTagsTable();
-  }
-  onManageModalCancel() {
-    this.isManageModalVisible = false;
-  }
-  onManageModalOk() {
-    this.isManageModalOkLoading = true;
-    this.checkedTags.forEach(item => {
-      if (this.monitor.tags.find(tag => tag.id == item.id) == undefined) {
-        this.monitor.tags.push(item);
-      }
-    });
-    this.isManageModalOkLoading = false;
-    this.isManageModalVisible = false;
-  }
-  onAllChecked(checked: boolean) {
-    if (checked) {
-      this.tags.forEach(tag => this.checkedTags.add(tag));
-    } else {
-      this.checkedTags.clear();
-    }
-  }
-  onItemChecked(tag: Tag, checked: boolean) {
-    if (checked) {
-      this.checkedTags.add(tag);
-    } else {
-      this.checkedTags.delete(tag);
-    }
-  }
-
-  getNumber(rangeString: string, index: number): number | undefined {
-    if (rangeString == undefined || rangeString == '' || rangeString.length <= index) {
-      return undefined;
-    }
-    const rangeArray = JSON.parse(rangeString);
-    return rangeArray[index];
-  }
-  // end tag model
 }

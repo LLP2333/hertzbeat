@@ -6,6 +6,7 @@ import { DetectAuthGuard } from '../core/guard/detect-auth-guard';
 import { LayoutBasicComponent } from '../layout/basic/basic.component';
 import { LayoutBlankComponent } from '../layout/blank/blank.component';
 import { LayoutPassportComponent } from '../layout/passport/passport.component';
+import { BulletinComponent } from './bulletin/bulletin.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { UserLockComponent } from './passport/lock/lock.component';
 import { UserLoginComponent } from './passport/login/login.component';
@@ -19,8 +20,13 @@ const routes: Routes = [
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: DashboardComponent, data: { titleI18n: 'menu.dashboard' } },
+      { path: 'bulletin', component: BulletinComponent, data: { titleI18n: 'menu.monitor.bulletin' } },
       { path: 'exception', loadChildren: () => import('./exception/exception.module').then(m => m.ExceptionModule) },
-      { path: 'monitors', loadChildren: () => import('./monitor/monitor.module').then(m => m.MonitorModule) },
+      {
+        path: 'monitors',
+        loadChildren: () => import('./monitor/monitor.module').then(m => m.MonitorModule),
+        data: { titleI18n: 'menu.monitor.center' }
+      },
       { path: 'alert', loadChildren: () => import('./alert/alert.module').then(m => m.AlertModule) },
       { path: 'setting', loadChildren: () => import('./setting/setting.module').then(m => m.SettingModule) }
     ]

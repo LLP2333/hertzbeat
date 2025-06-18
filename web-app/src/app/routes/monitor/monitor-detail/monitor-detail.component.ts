@@ -25,6 +25,7 @@ import { NzNotificationService } from 'ng-zorro-antd/notification';
 import { throwError } from 'rxjs';
 import { finalize, switchMap } from 'rxjs/operators';
 
+import { GrafanaDashboard } from '../../../pojo/GrafanaDashboard';
 import { Message } from '../../../pojo/Message';
 import { Monitor } from '../../../pojo/Monitor';
 import { Param } from '../../../pojo/Param';
@@ -50,33 +51,34 @@ export class MonitorDetailComponent implements OnInit, OnDestroy {
   monitorId!: number;
   app!: string;
   monitor: Monitor = new Monitor();
+  grafanaDashboard: GrafanaDashboard = new GrafanaDashboard();
   options: any;
   port: number | undefined;
   metrics!: string[];
   chartMetrics: any[] = [];
-  deadline = 30;
+  deadline = 90;
   countDownTime: number = 0;
   interval$!: any;
   whichTabIndex = 0;
   showBasic = true;
 
   ngOnInit(): void {
-    this.loadRealTimeMetric();
     this.countDownTime = this.deadline;
-    this.interval$ = setInterval(this.countDown.bind(this), 1000);
+    this.loadRealTimeMetric();
+    this.getGrafana();
   }
 
   loadMetricChart() {
     this.isSpinning = true;
     this.showBasic = false;
     this.whichTabIndex = 1;
-    // 检测历史数据服务是否可用
+    // detect if historical data service is available
     const detectStatus$ = this.monitorSvc
       .getWarehouseStorageServerStatus()
       .pipe(
         switchMap((message: Message<any>) => {
           if (message.code == 0) {
-            // 查询过滤出此监控下可计算聚合的数字指标
+            // Filter the numerical metrics that can be aggregated under this monitor
             if (this.app == 'push') {
               return this.appDefineSvc.getPushDefine(this.monitorId);
             } else if (this.app == 'prometheus') {
@@ -85,7 +87,7 @@ export class MonitorDetailComponent implements OnInit, OnDestroy {
               return this.appDefineSvc.getAppDefine(this.app);
             }
           } else {
-            // 不提供历史图表服务
+            // historical data service is unavailable
             return throwError(message.msg);
           }
         })
@@ -121,7 +123,7 @@ export class MonitorDetailComponent implements OnInit, OnDestroy {
           }
         },
         error => {
-          this.notifySvc.warning(this.i18nSvc.fanyi('monitors.detail.time-series.unavailable'), error);
+          this.notifySvc.warning(this.i18nSvc.fanyi('monitor.detail.time-series.unavailable'), error);
         }
       );
   }
@@ -143,8 +145,10 @@ export class MonitorDetailComponent implements OnInit, OnDestroy {
           if (message.code === 0) {
             this.monitor = message.data.monitor;
             this.app = this.monitor?.app;
+            if (this.monitor.scrape && this.monitor.scrape != 'static') {
+              this.app = this.monitor.scrape;
+            }
             let params: Param[] = message.data.params;
-            // 取出端口信息
             params.forEach(param => {
               if (param.field === 'port') {
                 this.port = Number(param.paramValue);
@@ -157,6 +161,9 @@ export class MonitorDetailComponent implements OnInit, OnDestroy {
           } else {
             console.warn(message.msg);
           }
+          if (this.interval$ === undefined) {
+            this.interval$ = setInterval(this.countDown.bind(this), 1000);
+          }
           this.isSpinning = false;
         },
         error => {
@@ -164,10 +171,6 @@ export class MonitorDetailComponent implements OnInit, OnDestroy {
           console.error(error.msg);
         }
       );
-  }
-
-  showBasicStatus(show: boolean) {
-    this.showBasic = show;
   }
 
   countDown() {
@@ -200,6 +203,19 @@ export class MonitorDetailComponent implements OnInit, OnDestroy {
     this.deadline = deadlineTime;
     this.countDownTime = this.deadline;
     this.cdr.detectChanges();
+  }
+
+  getGrafana() {
+    this.monitorSvc.getGrafanaDashboard(this.monitorId).subscribe(
+      message => {
+        if (message.code === 0 && message.data != null) {
+          this.grafanaDashboard = message.data;
+        }
+      },
+      error => {
+        console.error(error.msg);
+      }
+    );
   }
 
   ngOnDestroy(): void {

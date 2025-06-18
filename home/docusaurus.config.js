@@ -27,6 +27,12 @@ module.exports = {
     locales: ['zh-cn', 'en'],
   },
   themeConfig: {
+    matomo: {
+      matomoUrl: 'https://analytics.apache.org/',
+      siteId: '67',
+      phpLoader: 'matomo.php',
+      jsLoader: 'matomo.js',
+    },
     image: '/img/hertzbeat-logo.svg',
     liveCodeBlock: {
       playgroundPosition: 'bottom',
@@ -71,6 +77,11 @@ module.exports = {
           to: '/blog/',
         },
         {
+          label: 'download',
+          position: 'left',
+          to: '/docs/download',
+        },
+        {
           label: 'Community',
           position: 'left',
           items: [
@@ -79,8 +90,8 @@ module.exports = {
               to: '/docs/community/contact',
             },
             {
-              label: 'code_of_conduct',
-              to: 'https://www.apache.org/foundation/policies/conduct',
+              label: 'contribution',
+              to: '/docs/community/contribution',
             },
             {
               label: 'join_the_mailing_lists',
@@ -148,7 +159,7 @@ module.exports = {
             },
             {
               label: 'Security',
-              href: 'https://www.apache.org/security/',
+              to: '/docs/help/security_model',
             },
             {
               label: 'Sponsorship',
@@ -174,8 +185,8 @@ module.exports = {
               activeBaseRegex: `/team`,
             },
             {
-              label: 'contributing',
-              to: '/docs/community/mailing_lists',
+              label: 'development',
+              to: '/docs/community/development',
             },
             {
               label: 'kanban',
@@ -202,7 +213,7 @@ module.exports = {
           className: 'header-github-link'
         }, 
         {
-          href: 'https://twitter.com/hertzbeat1024',
+          href: 'https://x.com/hertzbeat1024',
           position: 'right',
           className: 'header-twitter-link'
         }, 
@@ -339,6 +350,7 @@ module.exports = {
         fromExtensions: ['html'],
       },
     ],
+    'docusaurus-plugin-matomo',
     '@docusaurus/plugin-ideal-image',
     [
       '@docusaurus/plugin-pwa',
@@ -346,7 +358,6 @@ module.exports = {
         debug: false,
         offlineModeActivationStrategies: ['appInstalled', 'queryString'],
         // swRegister: false,
-        swCustom: path.resolve(__dirname, 'src/sw.js'),
         pwaHead: [
           {
             tagName: 'link',
@@ -398,11 +409,5 @@ module.exports = {
       },
     ],
   ],
-  themes: ['@docusaurus/theme-live-codeblock'],
-  scripts: [
-    {
-      src: 'https://hm.baidu.com/hm.js?77fb03ed1c6c1267119fec6d84dd88f3',
-      async: true,
-    },
-  ],
+  themes: ['@docusaurus/theme-live-codeblock']
 }

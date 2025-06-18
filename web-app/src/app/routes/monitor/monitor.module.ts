@@ -22,9 +22,11 @@ import { NgModule, Type } from '@angular/core';
 import { SharedModule } from '@shared';
 import { NzBreadCrumbModule } from 'ng-zorro-antd/breadcrumb';
 import { NzCollapseModule } from 'ng-zorro-antd/collapse';
+import { NzDescriptionsModule } from 'ng-zorro-antd/descriptions';
 import { NzDividerModule } from 'ng-zorro-antd/divider';
 import { NzLayoutModule } from 'ng-zorro-antd/layout';
 import { NzListModule } from 'ng-zorro-antd/list';
+import { NzPaginationModule } from 'ng-zorro-antd/pagination';
 import { NzRadioModule } from 'ng-zorro-antd/radio';
 import { NzSpaceModule } from 'ng-zorro-antd/space';
 import { NzSwitchModule } from 'ng-zorro-antd/switch';
@@ -32,10 +34,12 @@ import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzUploadModule } from 'ng-zorro-antd/upload';
 import { NgxEchartsModule } from 'ngx-echarts';
 
+import { SafePipe } from '../SafePipe';
 import { MonitorDataChartComponent } from './monitor-data-chart/monitor-data-chart.component';
 import { MonitorDataTableComponent } from './monitor-data-table/monitor-data-table.component';
 import { MonitorDetailComponent } from './monitor-detail/monitor-detail.component';
 import { MonitorEditComponent } from './monitor-edit/monitor-edit.component';
+import { MonitorFormComponent } from './monitor-form/monitor-form.component';
 import { MonitorListComponent } from './monitor-list/monitor-list.component';
 import { MonitorNewComponent } from './monitor-new/monitor-new.component';
 import { MonitorRoutingModule } from './monitor-routing.module';
@@ -43,6 +47,7 @@ import { MonitorRoutingModule } from './monitor-routing.module';
 const COMPONENTS: Array<Type<void>> = [
   MonitorNewComponent,
   MonitorEditComponent,
+  MonitorFormComponent,
   MonitorListComponent,
   MonitorDetailComponent,
   MonitorDataTableComponent,
@@ -64,7 +69,10 @@ const COMPONENTS: Array<Type<void>> = [
     NzCollapseModule,
     ClipboardModule,
     NzUploadModule,
-    NzListModule
+    SafePipe,
+    NzListModule,
+    NzDescriptionsModule,
+    NzPaginationModule
   ],
   declarations: COMPONENTS
 })
